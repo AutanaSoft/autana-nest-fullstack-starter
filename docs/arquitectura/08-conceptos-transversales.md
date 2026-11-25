@@ -187,9 +187,11 @@ Los middlewares globales se registran en `configureApp` (`src/app.setup.ts`) y l
   `WEB_ORIGIN` lo es, porque CORS no confía automáticamente en un origen. Una petición sin `Sec-Fetch-Site` ni `Origin`,
   que no es de un navegador, pasa. No depende de cookies ni de tokens.
 - **Límite de peticiones.** `@nestjs/throttler`, solo en producción, para que el desarrollo y las pruebas no choquen con
-  él. Un límite global por IP (100 por minuto) y otro para las escrituras (20 por minuto, excepto `/v1/auth/*`, que usa
-  el límite de Better Auth). Responde `429 RATE_LIMITED` con `Retry-After`. Con `TRUST_PROXY=true` toma la IP de la
-  última entrada de `X-Forwarded-For`; actívalo solo detrás de un proxy inverso que la añada.
+  él. `RateLimitModule` (`src/common/modules/`) configura un límite global por IP (100 por minuto) y otro para las
+  escrituras (20 por minuto); `AppModule` registra `ThrottlerGuard`, para que se ejecute antes que el guard de sesión.
+  `/v1/auth/*` queda fuera, porque Better Auth lo atiende como middleware y aplica su propio límite. Responde
+  `429 RATE_LIMITED` con `Retry-After`. Con `TRUST_PROXY=true` toma la IP de la última entrada de `X-Forwarded-For`;
+  actívalo solo detrás de un proxy inverso que la añada.
 
 ### Caché
 
