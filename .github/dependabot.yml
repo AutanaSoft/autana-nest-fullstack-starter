@@ -7,9 +7,9 @@ updates:
     commit-message:
       prefix: "chore(deps)"
     ignore:
-      # `apps/api` se queda en TypeScript 6 porque `@nestjs/schematics`, `@nestjs/swagger` y
-      # `@thallesp/nestjs-better-auth` lo declaran como peer. Dependabot no distingue entre workspaces, así que
-      # no propone ningún salto mayor de TypeScript: se sube a mano, para todos a la vez, cuando esos paquetes lo admitan.
+      # TypeScript 6 es la versión que declaran `@nestjs/cli` (dependencia) y `@nestjs/schematics`, `@nestjs/swagger` y
+      # `@thallesp/nestjs-better-auth` (peer). Un salto mayor se hace a mano, para todo el repositorio a la vez, cuando
+      # esos paquetes lo admitan.
       - dependency-name: typescript
         update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
