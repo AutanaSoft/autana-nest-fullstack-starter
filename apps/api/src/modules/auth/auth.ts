@@ -1,6 +1,6 @@
 import { drizzleAdapter } from "@better-auth/drizzle-adapter"
 import { betterAuth } from "better-auth"
-import { openAPI } from "better-auth/plugins"
+import { admin, openAPI } from "better-auth/plugins"
 import { apiBasePath } from "@autana/contracts/api"
 import { passwordLength } from "@autana/contracts/auth"
 import * as schema from "@autana/database/schema/auth"
@@ -34,8 +34,13 @@ export function createAuth(db: Database, auth: AuthConfig, openApi: OpenApiConfi
       ...(auth.NODE_ENV === "production" && { useSecureCookies: true }),
     },
     trustedOrigins: [auth.WEB_ORIGIN],
-    // La referencia solo se publica en desarrollo, igual que el resto de la documentación.
-    plugins: openApi.enabled ? [openAPI()] : [],
+    plugins: [
+      // Añade el rol y el baneo del usuario y las rutas `/v1/auth/admin/*`, con los valores por defecto: solo existen
+      // los roles `admin` y `user`.
+      admin(),
+      // La referencia solo se publica en desarrollo, igual que el resto de la documentación.
+      ...(openApi.enabled ? [openAPI()] : []),
+    ],
   })
 }
 

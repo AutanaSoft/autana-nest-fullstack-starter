@@ -156,6 +156,14 @@ devuelve un cuerpo declara su esquema con `@ResponseSchema`; una ruta sin esquem
   toma de esa cabecera, que solo es fiable si el proxy la sobrescribe siempre y el servidor no acepta tráfico que no
   pase por él.
 - Con `NODE_ENV=production`, la cookie de sesión lleva `Secure` aunque el proceso reciba `http` de un proxy.
+- El plugin `admin` de Better Auth (`admin()` en `auth.ts`, con sus valores por defecto) añade el rol y el baneo de la
+  cuenta: `user.role` (`user` por defecto), `banned`, `banReason` y `banExpires`, y `session.impersonatedBy`. Sus rutas
+  están bajo `/v1/auth/admin/*` (`set-role`, `ban-user`, `unban-user`, `list-users`, `impersonate-user` y otras), con el
+  formato de error nativo de Better Auth, y solo las usa quien tiene el rol `admin`; sin control de acceso propio no
+  existen más roles. Un usuario baneado recibe `403` con el código `BANNED_USER` al iniciar sesión, y banearlo revoca
+  sus sesiones. Un baneo con fecha de vencimiento pasada se levanta solo en el siguiente inicio de sesión. Para proteger
+  una ruta propia por rol se usa `@Roles(["admin"])`, que lee `session.user.role`. No hay un primer administrador: el
+  rol se asigna con SQL directo.
 - La autorización se hace en el servicio: toda consulta se limita a la cuenta autenticada, y un recurso ajeno responde
   `404`.
 
@@ -215,9 +223,9 @@ autenticación lo añade a las suyas. Los middlewares del módulo se ejecutan an
 - Los identificadores son `uuid` y los genera PostgreSQL con `gen_random_uuid()`. Las columnas de fecha son
   `timestamptz` (`timestamp` con `withTimezone: true`).
 - `packages/database/src/schema/auth.ts` define las tablas de Better Auth (`user`, `session`, `account` y
-  `verification`) y es la fuente de verdad: no se regenera con la CLI de Better Auth, que crea los ids como texto y las
-  fechas sin zona horaria. Better Auth comprueba que el esquema coincida con lo que necesita (`validateSchema`, activo
-  fuera de producción).
+  `verification`, con las columnas del plugin `admin`) y es la fuente de verdad: no se regenera con la CLI de Better
+  Auth, que crea los ids como texto y las fechas sin zona horaria. Better Auth comprueba que el esquema coincida con lo
+  que necesita (`validateSchema`, activo fuera de producción).
 
 ### Configuración y entornos
 

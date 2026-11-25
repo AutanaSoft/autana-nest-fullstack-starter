@@ -102,6 +102,11 @@
   nace protegida. Consecuencia: las rutas `/v1/auth/*` no pasan por los filtros ni por el límite de peticiones de Nest y
   devuelven los errores nativos de Better Auth. Alternativa descartada: un controlador propio que reenvía la petición y
   reescribe los errores.
+- **Rol y baneo con el plugin `admin` de Better Auth.** Aporta el rol, el baneo y sus rutas de administración sin código
+  propio, y `@Roles()` del paquete de Nest ya lee su campo `role`. Se usan sus permisos por defecto, incluidos los de
+  suplantar a un usuario, cambiar su contraseña y borrarlo. Alternativa descartada: un campo `status` propio, que
+  obligaría a rechazar el inicio de sesión y a revocar las sesiones a mano; se reconsidera si hacen falta más estados
+  que activo y suspendido.
 - **Sin caché de servidor y `no-store` en las rutas con datos del usuario.** Evita que el navegador o un proxy guarden
   respuestas privadas.
 - **`@nestjs/throttler` para el límite de peticiones.** Es el paquete oficial. Alternativa descartada: uno propio, que

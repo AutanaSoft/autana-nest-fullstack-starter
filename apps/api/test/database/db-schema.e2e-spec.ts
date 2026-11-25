@@ -1,5 +1,6 @@
 import { createDatabase } from "@autana/database/client"
 import { getAuthTables } from "better-auth/db"
+import { admin } from "better-auth/plugins"
 import { sql } from "drizzle-orm"
 
 // Compara las tablas que Better Auth necesita con las de la base migrada: columnas, tipos, nulabilidad
@@ -49,7 +50,7 @@ describe("esquema de la base de datos", () => {
 
   afterAll(() => pool.end())
 
-  const tables = getAuthTables({ emailAndPassword: { enabled: true } })
+  const tables = getAuthTables({ emailAndPassword: { enabled: true }, plugins: [admin()] })
 
   for (const table of Object.values(tables)) {
     describe(table.modelName, () => {
