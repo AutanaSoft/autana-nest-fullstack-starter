@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common"
 import { ThrottlerModule } from "@nestjs/throttler"
 import type { Request } from "express"
 
+import { appConfig, type AppConfig } from "../../config/app.config.js"
 import { rateLimitConfig, type RateLimitConfig } from "../../config/rate-limit.config.js"
 
 const readMethods = ["GET", "HEAD", "OPTIONS"]
@@ -12,9 +13,14 @@ const readMethods = ["GET", "HEAD", "OPTIONS"]
 @Module({
   imports: [
     ThrottlerModule.forRootAsync({
-      inject: [rateLimitConfig.KEY],
-      useFactory: (rateLimit: RateLimitConfig) => ({
+      inject: [rateLimitConfig.KEY, appConfig.KEY],
+      useFactory: (rateLimit: RateLimitConfig, app: AppConfig) => ({
         skipIf: () => !rateLimit.enabled,
+        // Con `CLIENT_IP_HEADER` cuenta por la IP de esa cabecera; si no llega, por la de la conexión.
+        getTracker: (request) => {
+          const clientIp = app.CLIENT_IP_HEADER && (request as Request).get(app.CLIENT_IP_HEADER)
+          return clientIp || request.ip || ""
+        },
         throttlers: [
           { name: "global", ttl: rateLimit.windowMs, limit: rateLimit.globalLimit },
           {

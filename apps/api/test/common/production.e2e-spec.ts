@@ -81,6 +81,23 @@ describe("la aplicación con NODE_ENV=production", () => {
       expect((await get("1.1.1.1, 8.8.8.8")).status).toBe(200)
     })
 
+    it("con CLIENT_IP_HEADER cuenta por la IP de esa cabecera e ignora X-Forwarded-For", async () => {
+      await start(true, { CLIENT_IP_HEADER: "CF-Connecting-IP" })
+      const getAs = (clientIp: string, forwardedFor: string) =>
+        client.request("/health", { headers: { "CF-Connecting-IP": clientIp, "X-Forwarded-For": forwardedFor } })
+      for (let i = 0; i < 100; i++) expect((await getAs("3.3.3.3", `1.1.1.${i}, 9.9.9.9`)).status).toBe(200)
+
+      expect((await getAs("3.3.3.3", "2.2.2.2, 8.8.8.8")).status).toBe(429)
+      expect((await getAs("4.4.4.4", "2.2.2.2, 9.9.9.9")).status).toBe(200)
+    })
+
+    it("con CLIENT_IP_HEADER y sin esa cabecera en la petición, cuenta por la IP de la conexión", async () => {
+      await start(false, { CLIENT_IP_HEADER: "CF-Connecting-IP" })
+      for (let i = 0; i < 100; i++) expect((await client.request("/health")).status).toBe(200)
+
+      expect((await client.request("/health")).status).toBe(429)
+    })
+
     it("sin proxy de confianza ignora X-Forwarded-For", async () => {
       await start(false)
       await fillCounter()

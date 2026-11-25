@@ -5,11 +5,12 @@ import { apiBasePath } from "@autana/contracts/api"
 import { passwordLength } from "@autana/contracts/auth"
 import * as schema from "@autana/database/schema/auth"
 
+import type { AppConfig } from "../../config/app.config.js"
 import type { AuthConfig } from "../../config/auth.config.js"
 import type { OpenApiConfig } from "../../config/openapi.config.js"
 import type { Database } from "../../database/database.js"
 
-export function createAuth(db: Database, auth: AuthConfig, openApi: OpenApiConfig) {
+export function createAuth(db: Database, auth: AuthConfig, openApi: OpenApiConfig, app: AppConfig) {
   return betterAuth({
     basePath: `${apiBasePath}/auth`,
     baseURL: auth.BETTER_AUTH_URL,
@@ -29,7 +30,7 @@ export function createAuth(db: Database, auth: AuthConfig, openApi: OpenApiConfi
       database: { generateId: "uuid", joins: true },
       // Sin esta cabecera Better Auth lee `X-Forwarded-For`, que sin proxy es falsificable y, con una cadena de proxies,
       // no permite resolver la IP: todos los clientes compartirían el contador de intentos.
-      ...(auth.CLIENT_IP_HEADER && { ipAddress: { ipAddressHeaders: [auth.CLIENT_IP_HEADER] } }),
+      ...(app.CLIENT_IP_HEADER && { ipAddress: { ipAddressHeaders: [app.CLIENT_IP_HEADER] } }),
       // La URL pública suele ser `https` aunque el proceso reciba `http` de un proxy: no se deja a su esquema.
       ...(auth.NODE_ENV === "production" && { useSecureCookies: true }),
     },
