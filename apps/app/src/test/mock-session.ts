@@ -1,5 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react"
 import { http, HttpResponse } from "msw"
+import { cleanStores } from "nanostores"
 
 import { authClient } from "@/lib/auth-client"
 
@@ -18,4 +19,6 @@ export async function mockSession(response: Response | null | object) {
     if (result.current.isPending) throw new Error("La sesión sigue cargando")
   })
   unmount()
+  // Libera el store en el acto en vez de 1 s después: ver `render-with-providers.tsx`.
+  cleanStores(authClient.$store.atoms.session)
 }
