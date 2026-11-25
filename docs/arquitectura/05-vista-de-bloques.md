@@ -31,6 +31,7 @@ apps/api/
     │   ├── errors/
     │   ├── filters/
     │   ├── middleware/
+    │   ├── modules/
     │   ├── openapi/
     │   └── pipes/
     └── modules/
@@ -65,6 +66,8 @@ apps/api/
   - `errors/`: la construcción de los errores públicos (`createErrorResponse`).
   - `filters/`: el filtro de excepciones.
   - `middleware/`: el identificador de la petición, el registro y las cabeceras `no-store`.
+  - `modules/`: el módulo del límite de peticiones (`RateLimitModule`), que configura `@nestjs/throttler` y no pertenece
+    a ninguna funcionalidad. No es `src/modules/`, que reúne los módulos de funcionalidad.
   - `openapi/`: el registro de los esquemas de OpenAPI.
   - `pipes/`: el pipe de validación del contrato.
 - `src/modules/<name>/` contiene un módulo de Nest por funcionalidad. `src/modules/auth/` registra `AuthModule` de

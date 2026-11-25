@@ -44,6 +44,13 @@ describe("la aplicación con NODE_ENV=production", () => {
     })
   })
 
+  it("limita antes de comprobar la sesión: una ruta protegida sin sesión responde 429, no 401", async () => {
+    await start()
+    for (let i = 0; i < 100; i++) expect((await client.request("/tasks")).status).toBe(401)
+
+    expect((await client.request("/tasks")).status).toBe(429)
+  })
+
   it("aplica un límite más estricto a las escrituras", async () => {
     await start()
     const write = () => client.request("/tasks", { method: "POST", body: {} })

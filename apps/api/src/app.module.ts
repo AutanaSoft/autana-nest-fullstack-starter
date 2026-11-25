@@ -1,21 +1,17 @@
 import { Module, StandardSchemaSerializerInterceptor } from "@nestjs/common"
 import { ConfigModule } from "@nestjs/config"
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core"
-import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler"
-import type { Request } from "express"
-import { apiBasePath } from "@autana/contracts/api"
+import { ThrottlerGuard } from "@nestjs/throttler"
 
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter.js"
+import { RateLimitModule } from "./common/modules/rate-limit.module.js"
 import { configurations } from "./config/index.js"
 import { validateEnv } from "./config/env.validation.js"
-import { rateLimitConfig, type RateLimitConfig } from "./config/rate-limit.config.js"
 import { DatabaseModule } from "./database/database.module.js"
 import { AuthModule } from "./modules/auth/auth.module.js"
 import { HealthModule } from "./modules/health/health.module.js"
 import { ProfileModule } from "./modules/profile/profile.module.js"
 import { TasksModule } from "./modules/tasks/tasks.module.js"
-
-const readMethods = ["GET", "HEAD", "OPTIONS"]
 
 @Module({
   imports: [
@@ -27,27 +23,7 @@ const readMethods = ["GET", "HEAD", "OPTIONS"]
       load: configurations,
       validate: validateEnv,
     }),
-    // Las rutas de autenticación solo usan el límite global, porque Better Auth aplica su propio límite en producción.
-    ThrottlerModule.forRootAsync({
-      inject: [rateLimitConfig.KEY],
-      useFactory: (rateLimit: RateLimitConfig) => ({
-        skipIf: () => !rateLimit.enabled,
-        throttlers: [
-          { name: "global", ttl: rateLimit.windowMs, limit: rateLimit.globalLimit },
-          {
-            name: "writes",
-            ttl: rateLimit.windowMs,
-            limit: rateLimit.writesLimit,
-            // Sustituye al `skipIf` global, por lo que repite la condición de producción.
-            skipIf: (context) => {
-              if (!rateLimit.enabled) return true
-              const { method, path } = context.switchToHttp().getRequest<Request>()
-              return readMethods.includes(method) || path.startsWith(`${apiBasePath}/auth/`)
-            },
-          },
-        ],
-      }),
-    }),
+    RateLimitModule,
     DatabaseModule,
     AuthModule,
     HealthModule,
