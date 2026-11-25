@@ -12,8 +12,6 @@ SWC solo transforma el código: no comprueba tipos. `npm run typecheck` ejecuta 
 - **Paquetes del workspace.** `contracts` y `database` se distribuyen como fuente TypeScript y SWC no los compila:
   Node.js los ejecuta quitando los tipos. Por eso los imports relativos entre sus archivos llevan la extensión `.ts`, y
   `tsconfig.json` activa `rewriteRelativeImportExtensions` para que `tsc` los acepte.
-- **TypeScript.** `apps/api` usa TypeScript 6, que es el que admite la CLI de Nest, y no la versión del resto del
-  monorepo.
 - **Desarrollo.** `npm run dev` ejecuta mediante Turborepo la tarea `dev` de `apps/api`, que lanza `nest start --watch`
   con `NODE_ENV=development`: compila con SWC y reinicia Node cuando cambia el código. `NODE_ENV=development` es lo que
   activa la documentación.

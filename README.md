@@ -8,7 +8,7 @@
 
 ![Licencia MIT](https://img.shields.io/badge/licencia-MIT-green)
 ![Node.js 26](https://img.shields.io/badge/node-26-339933?logo=nodedotjs&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)
 ![PostgreSQL 18+](https://img.shields.io/badge/PostgreSQL-18%2B-4169E1?logo=postgresql&logoColor=white)
 
 </div>

@@ -12,7 +12,7 @@
 | Node.js             | 26 LTS  | Entorno de ejecución (`engines`: `>=26`) |
 | npm                 | 11.20.0 | Gestor de paquetes y workspaces          |
 | Turborepo (`turbo`) | 2.11.13 | Orquestador de tareas del monorepo       |
-| TypeScript          | 7.0.2   | Lenguaje                                 |
+| TypeScript          | 6.0.3   | Lenguaje                                 |
 
 ### Frontend
 
@@ -49,9 +49,6 @@
 | Zod                                        | ^4.6.7   | Validación de esquemas                                 |
 | OpenAPI                                    | 3.0      | Especificación de APIs                                 |
 | SWC (`@swc/core` y `@swc/cli`)             | ^1.16.22 | Compilador de la API                                   |
-| TypeScript (solo en `apps/api`)            | ^6.0.2   | Compilación y comprobación de tipos de la API          |
-
-La API usa TypeScript 6 y no la versión del resto del monorepo porque la CLI de Nest todavía no admite TypeScript 7.
 
 ### Base de datos
 
