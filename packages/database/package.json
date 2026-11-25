@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@autana/oxlint-config": "*",
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.6.6",
     "@types/pg": "^8.23.1",
     "drizzle-kit": "^0.31.11",
     "typescript": "^7.0.2",
