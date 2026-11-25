@@ -13,7 +13,7 @@ import { openApiConfig } from "./config/openapi.config.js"
 import { securityHeadersConfig } from "./config/security-headers.config.js"
 
 // Configuración de la aplicación que no es un módulo. Se separa de `main.ts` para que las pruebas e2e arranquen la
-// misma aplicación. La aplicación debe crearse con `rawBody: true`: Better Auth recibe los bytes originales.
+// misma aplicación. La aplicación debe crearse con `bodyParser: false`: `AuthModule` registra los parsers de cuerpo.
 export function configureApp(app: NestExpressApplication) {
   const { WEB_ORIGIN: webOrigin, TRUST_PROXY } = app.get(appConfig.KEY)
   const openApi = app.get(openApiConfig.KEY)

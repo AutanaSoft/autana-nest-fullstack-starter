@@ -13,7 +13,8 @@
 6. `enableCsrfProtection` rechaza con `403` las peticiones que cambian estado desde otro origen.
 7. Los middlewares del módulo, como `noStore`, se ejecutan para las rutas del controlador.
 8. Los guards globales se ejecutan en este orden: `ThrottlerGuard` responde `429` si la IP supera el límite (solo se
-   registra con `NODE_ENV=production`) y `SessionGuard` responde `401` si no hay sesión, salvo en las rutas `@Public()`.
+   registra con `NODE_ENV=production`) y `AuthGuard` responde `401` si no hay sesión, salvo en las rutas
+   `@AllowAnonymous()`.
 9. `StandardSchemaSerializerInterceptor` envuelve la ejecución del controlador para validar la respuesta al salir.
 10. `ContractValidationPipe` valida `param`, `query` y `body` con los esquemas del contrato. Si la validación falla,
     responde el error público del destino que falló.
@@ -26,9 +27,10 @@ aunque además sea inválida. Los middlewares globales se registran en `configur
 primero porque los demás lo usan, incluido el rechazo de CSRF. Qué hace cada pieza se describe en
 [Middlewares](./08-conceptos-transversales.md#middlewares).
 
-El controlador de `auth` entrega la petición a la librería de autenticación con los bytes originales (`rawBody`) y copia
-su respuesta al `Response` de Express. Sus errores se reescriben con el contrato público y las respuestas correctas
-pasan sin cambios.
+Las rutas `/v1/auth/*` siguen otro camino. `AuthModule` monta Better Auth como un middleware de Express, que atiende la
+petición tras los middlewares globales de los pasos 1 a 6 y antes de los guards: no le alcanzan los guards, el
+interceptor, los pipes ni el filtro de excepciones. Sus errores no siguen el contrato de error de la API, y el límite de
+peticiones de Nest no las cuenta.
 
 ## Frontend
 

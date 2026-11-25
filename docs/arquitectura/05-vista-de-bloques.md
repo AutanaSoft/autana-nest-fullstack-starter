@@ -47,8 +47,8 @@ apps/api/
             └── filters/
 ```
 
-- `src/main.ts` crea la aplicación con `rawBody: true` (la librería de autenticación recibe los bytes originales de la
-  petición), aplica `configureApp` y escucha en `PORT`.
+- `src/main.ts` crea la aplicación con `bodyParser: false` (`AuthModule` registra los parsers de cuerpo fuera de las
+  rutas de autenticación), aplica `configureApp` y escucha en `PORT`.
 - `src/app.module.ts` es el módulo raíz. Importa la configuración, la base de datos y los módulos, y registra el filtro
   de excepciones, el interceptor de serialización y, en producción, el límite de peticiones.
 - `src/app.setup.ts` reúne la configuración que no es un módulo: los middlewares globales (identificador de la petición,
@@ -67,8 +67,10 @@ apps/api/
   - `middleware/`: el identificador de la petición, el registro y las cabeceras `no-store`.
   - `openapi/`: el registro de los esquemas de OpenAPI.
   - `pipes/`: el pipe de validación del contrato.
-- `src/modules/<name>/` contiene un módulo de Nest por funcionalidad. El módulo `auth` también aloja el guard de sesión
-  global y los decoradores `@Public()` y `@CurrentUserId()`.
+- `src/modules/<name>/` contiene un módulo de Nest por funcionalidad. `src/modules/auth/` registra `AuthModule` de
+  `@thallesp/nestjs-better-auth` (`auth.module.ts`), con la configuración de Better Auth (`auth.ts`) y el hook que
+  valida el usuario (`user-validation.hook.ts`). El guard de sesión global y los decoradores `@AllowAnonymous()` y
+  `@Session()` los aporta el paquete.
 - `test/<name>/` contiene las pruebas de integración de cada módulo, y `test/support/`, la preparación de la base de
   pruebas. Las pruebas unitarias viven junto al archivo que prueban (`<archivo>.spec.ts`). Los niveles y su criterio
   están en [Pruebas](./08-conceptos-transversales.md#pruebas).

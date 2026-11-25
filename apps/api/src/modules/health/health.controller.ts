@@ -1,12 +1,12 @@
 import { Controller, Get } from "@nestjs/common"
 import { ApiOperation, ApiTags } from "@nestjs/swagger"
+import { AllowAnonymous } from "@thallesp/nestjs-better-auth"
 import { healthResponseSchema } from "@autana/contracts/health"
 
 import { ResponseSchema } from "../../common/decorators/response-schema.decorator.js"
-import { Public } from "../auth/decorators/public.decorator.js"
 
 @ApiTags("health")
-@Public()
+@AllowAnonymous()
 @Controller("health")
 export class HealthController {
   @Get()

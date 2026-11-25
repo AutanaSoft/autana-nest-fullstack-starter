@@ -6,9 +6,9 @@ import { configureApp } from "./app.setup.js"
 import { appConfig } from "./config/app.config.js"
 
 async function bootstrap() {
-  // `rawBody` conserva los bytes de la petición para pasárselos a Better Auth.
+  // `AuthModule` desactiva el parser de cuerpo de Nest y registra el suyo fuera de las rutas de Better Auth.
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    rawBody: true,
+    bodyParser: false,
   })
   configureApp(app)
   await app.listen(app.get(appConfig.KEY).PORT)

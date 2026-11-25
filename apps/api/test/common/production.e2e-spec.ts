@@ -10,9 +10,9 @@ describe("la aplicación con NODE_ENV=production", () => {
   let app: NestExpressApplication
   let client: ReturnType<typeof createClient>
 
-  async function start(trustProxy = false) {
+  async function start(trustProxy = false, extraEnv: Record<string, string> = {}) {
     app = await createTestApp({
-      env: { NODE_ENV: "production", TRUST_PROXY: String(trustProxy) },
+      env: { NODE_ENV: "production", TRUST_PROXY: String(trustProxy), ...extraEnv },
     })
     client = createClient(app)
   }
@@ -79,6 +79,45 @@ describe("la aplicación con NODE_ENV=production", () => {
       await fillCounter()
 
       expect((await get("1.1.1.1, 8.8.8.8")).status).toBe(429)
+    })
+  })
+  describe("Better Auth", () => {
+    const emailPrefix = "e2e-production-"
+    const signInAttempt = (clientIp: string, forwardedFor: string) =>
+      client.request("/auth/sign-in/email", {
+        method: "POST",
+        body: { email: `${emailPrefix}nadie@mail.com`, password: "12345678" },
+        headers: { "CF-Connecting-IP": clientIp, "X-Forwarded-For": forwardedFor },
+      })
+
+    afterEach(() => client.deleteUsers(emailPrefix))
+
+    it("con CLIENT_IP_HEADER limita los intentos de acceso por la IP de esa cabecera", async () => {
+      await start(false, { CLIENT_IP_HEADER: "CF-Connecting-IP" })
+      for (let i = 0; i < 3; i++) expect((await signInAttempt("3.3.3.3", `1.1.1.${i}, 9.9.9.9`)).status).toBe(401)
+
+      expect((await signInAttempt("3.3.3.3", "2.2.2.2, 8.8.8.8")).status).toBe(429)
+      expect((await signInAttempt("4.4.4.4", "2.2.2.2, 9.9.9.9")).status).toBe(401)
+    })
+
+    it("sin CLIENT_IP_HEADER y con una cadena de proxies, todos los clientes comparten el contador", async () => {
+      await start()
+      for (let i = 0; i < 3; i++) expect((await signInAttempt(`3.3.3.${i}`, `1.1.1.${i}, 9.9.9.9`)).status).toBe(401)
+
+      expect((await signInAttempt("4.4.4.4", "2.2.2.2, 9.9.9.9")).status).toBe(429)
+    })
+
+    it("la cookie de sesión es Secure aunque BETTER_AUTH_URL use http", async () => {
+      await start()
+
+      const response = await client.request("/auth/sign-up/email", {
+        method: "POST",
+        body: { name: "Ana Ruiz", email: `${emailPrefix}${crypto.randomUUID()}@mail.com`, password: "12345678" },
+      })
+
+      const [sessionCookie] = response.headers["set-cookie"] as unknown as string[]
+      expect(sessionCookie).toMatch(/^__Secure-better-auth\.session_token=/)
+      expect(sessionCookie).toMatch(/;\s*Secure/i)
     })
   })
 })

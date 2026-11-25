@@ -19,10 +19,10 @@ import {
   updateTaskSchema,
   type UpdateTaskValues,
 } from "@autana/contracts/tasks"
+import { Session, type UserSession } from "@thallesp/nestjs-better-auth"
 
 import { ContractValidationPipe } from "../../common/pipes/contract-validation.pipe.js"
 import { ResponseSchema } from "../../common/decorators/response-schema.decorator.js"
-import { CurrentUserId } from "../auth/decorators/current-user-id.decorator.js"
 import { TasksService } from "./services/tasks.service.js"
 
 const taskIdSchema = taskParamsSchema.shape.taskId
@@ -56,16 +56,16 @@ export class TasksController {
   @ApiOperation({ summary: "Lista las tareas del usuario" })
   @ApiBadRequestResponse(invalidInput)
   @ResponseSchema(listTasksResponseSchema)
-  list(@CurrentUserId() userId: string, @Query({ schema: listTasksQuerySchema }) query: ListTasksQuery) {
-    return this.tasksService.list(userId, query)
+  list(@Session() session: UserSession, @Query({ schema: listTasksQuerySchema }) query: ListTasksQuery) {
+    return this.tasksService.list(session.user.id, query)
   }
 
   @Post()
   @ApiOperation({ summary: "Crea una tarea" })
   @ApiBadRequestResponse(invalidInput)
   @ResponseSchema(taskSchema, 201)
-  create(@CurrentUserId() userId: string, @Body({ schema: createTaskSchema }) values: CreateTaskValues) {
-    return this.tasksService.create(userId, values)
+  create(@Session() session: UserSession, @Body({ schema: createTaskSchema }) values: CreateTaskValues) {
+    return this.tasksService.create(session.user.id, values)
   }
 
   @Get(":taskId")
@@ -73,8 +73,8 @@ export class TasksController {
   @ApiBadRequestResponse(invalidInput)
   @ApiNotFoundResponse(taskNotFound)
   @ResponseSchema(taskSchema)
-  get(@CurrentUserId() userId: string, @Param("taskId", { schema: taskIdSchema }) taskId: string) {
-    return this.tasksService.get(userId, taskId)
+  get(@Session() session: UserSession, @Param("taskId", { schema: taskIdSchema }) taskId: string) {
+    return this.tasksService.get(session.user.id, taskId)
   }
 
   @Patch(":taskId")
@@ -83,11 +83,11 @@ export class TasksController {
   @ApiNotFoundResponse(taskNotFound)
   @ResponseSchema(taskSchema)
   update(
-    @CurrentUserId() userId: string,
+    @Session() session: UserSession,
     @Param("taskId", { schema: taskIdSchema }) taskId: string,
     @Body({ schema: updateTaskSchema }) values: UpdateTaskValues
   ) {
-    return this.tasksService.update(userId, taskId, values)
+    return this.tasksService.update(session.user.id, taskId, values)
   }
 
   @Delete(":taskId")
@@ -96,7 +96,7 @@ export class TasksController {
   @ApiBadRequestResponse(invalidInput)
   @ApiNotFoundResponse(taskNotFound)
   @ApiNoContentResponse({ description: "Tarea eliminada" })
-  async delete(@CurrentUserId() userId: string, @Param("taskId", { schema: taskIdSchema }) taskId: string) {
-    await this.tasksService.delete(userId, taskId)
+  async delete(@Session() session: UserSession, @Param("taskId", { schema: taskIdSchema }) taskId: string) {
+    await this.tasksService.delete(session.user.id, taskId)
   }
 }

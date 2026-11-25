@@ -30,10 +30,10 @@ export class <Resource>Controller {
   @ApiConflictResponse({ description: "El recurso cambió", standardSchema: errorResponseSchema })
   @ResponseSchema(<action>ResponseSchema)
   <action>(
-    @CurrentUserId() userId: string,
+    @Session() session: UserSession,
     @Param("resourceId", { schema: resourceIdSchema }) resourceId: string
   ) {
-    return this.<resource>Service.<action>(userId, resourceId)
+    return this.<resource>Service.<action>(session.user.id, resourceId)
   }
 }
 ```
@@ -81,7 +81,7 @@ export class <Resource>Service {
 
 El módulo declara el controlador y el servicio. Si las respuestas del módulo no deben guardarse, registra `noStore` con
 `configure`: los middlewares del módulo se ejecutan antes que el guard de sesión, por lo que también alcanza a su `401`.
-Toda ruta exige sesión salvo que se marque con `@Public()`.
+Toda ruta exige sesión salvo que se marque con `@AllowAnonymous()`.
 
 ```ts
 // modules/<resource>/<resource>.module.ts

@@ -7,10 +7,10 @@ Esta sección lista únicamente lo que está pendiente. Al resolver una entrada,
 
 Cada entrada indica por qué se difiere y la condición que obliga a resolverla.
 
-- **Los errores de la referencia `/v1/auth/reference`** se describen con la forma original de Better Auth, no con la
-  normalizada.
-  - Por qué se difiere: es documentación solo de desarrollo y el plugin no permite cambiarla.
-  - Condición: si se necesita una referencia fiel al contrato público.
+- **Las rutas `/v1/auth/*` no cumplen el contrato de error de la API** (`errorResponseSchema`) ni las cuenta
+  `ThrottlerGuard`.
+  - Por qué se difiere: Better Auth las atiende como middleware, fuera de los filtros y guards de Nest.
+  - Condición: si se necesita el contrato de error en esas rutas, hay que normalizarlo en un middleware propio.
 - **El límite de peticiones guarda los contadores en la memoria del proceso.**
   - Por qué se difiere: con una sola instancia basta y no añade infraestructura.
   - Condición: si la API se despliega con varias instancias, hay que usar un almacén compartido.

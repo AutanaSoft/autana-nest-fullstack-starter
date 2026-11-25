@@ -83,10 +83,10 @@ export class <Related>Controller {
   @Post()
   @ResponseSchema(<related>Schema, 201)
   async create(
-    @CurrentUserId() userId: string,
+    @Session() session: UserSession,
     @Body({ schema: create<Related>Schema }) values: Create<Related>Values
   ) {
-    const created = await this.<related>Service.create(userId, values)
+    const created = await this.<related>Service.create(session.user.id, values)
     await this.paymentsService.charge(created)
     await this.notificationsService.send<Related>Confirmation(created)
     return created

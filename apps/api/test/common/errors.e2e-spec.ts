@@ -3,12 +3,12 @@ import type { NestExpressApplication } from "@nestjs/platform-express"
 import { errorResponseSchema } from "@autana/contracts/errors"
 import supertest from "supertest"
 
-import { Public } from "../../src/modules/auth/decorators/public.decorator.js"
+import { AllowAnonymous } from "@thallesp/nestjs-better-auth"
 import { createTestApp } from "../support/test-app.js"
 import { createClient } from "../support/test-client.js"
 
 // Rutas de prueba para provocar errores que la API no produce por sí sola.
-@Public()
+@AllowAnonymous()
 @Controller("test")
 class ErrorsTestController {
   @Get("boom")

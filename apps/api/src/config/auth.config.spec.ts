@@ -17,4 +17,12 @@ describe("buildAuthConfig", () => {
   it("rechaza una URL de Better Auth con ruta", () => {
     expect(() => buildAuthConfig({ ...valid, BETTER_AUTH_URL: "http://localhost:3000/api" })).toThrow()
   })
+
+  it("normaliza CLIENT_IP_HEADER y trata el valor vacío como no definido", () => {
+    expect(buildAuthConfig({ ...valid, CLIENT_IP_HEADER: "CF-Connecting-IP" }).CLIENT_IP_HEADER).toBe(
+      "cf-connecting-ip"
+    )
+    expect(buildAuthConfig({ ...valid, CLIENT_IP_HEADER: "" }).CLIENT_IP_HEADER).toBeUndefined()
+    expect(() => buildAuthConfig({ ...valid, CLIENT_IP_HEADER: "no válida" })).toThrow()
+  })
 })

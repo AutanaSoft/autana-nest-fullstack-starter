@@ -35,20 +35,14 @@ describe("sesión", () => {
           password: "contraseña-incorrecta",
         },
       })
-      const wrongBody = errorResponseSchema.parse(wrongPassword.body)
-      const unknownBody = errorResponseSchema.parse(unknownUser.body)
-
       // No se distingue una cuenta existente de una que no existe.
       expect(wrongPassword.status).toBe(401)
-      expect(wrongBody).toMatchObject({
+      expect(wrongPassword.body).toEqual({
         code: "INVALID_EMAIL_OR_PASSWORD",
         message: "Invalid email or password",
       })
-      expect([wrongBody.code, wrongBody.message, wrongBody.statusCode]).toEqual([
-        unknownBody.code,
-        unknownBody.message,
-        unknownBody.statusCode,
-      ])
+      expect(unknownUser.status).toBe(401)
+      expect(unknownUser.body).toEqual(wrongPassword.body)
       expect(wrongPassword.headers["set-cookie"]).toBeUndefined()
     })
 
@@ -118,16 +112,18 @@ describe("sesión", () => {
   })
 
   describe("cuerpos JSON mal formados", () => {
-    it.each(["/auth/sign-in/email", "/auth/sign-up/email"])("%s responde 400 con el contrato público", async (path) => {
-      const response = await client.request(path, {
-        method: "POST",
-        rawBody: "{no es json",
-      })
-      const body = errorResponseSchema.parse(response.body)
+    it.each(["/auth/sign-in/email", "/auth/sign-up/email"])(
+      "%s responde 400 con el code de Better Auth",
+      async (path) => {
+        const response = await client.request(path, {
+          method: "POST",
+          rawBody: "{no es json",
+        })
 
-      expect(response.status).toBe(400)
-      expect(body.statusCode).toBe(400)
-      expect(response.headers["x-request-id"]).toBe(body.requestId)
-    })
+        expect(response.status).toBe(400)
+        expect(response.body.code).toBe("BAD_REQUEST")
+        expect(response.headers["x-request-id"]).toBeTruthy()
+      }
+    )
   })
 })

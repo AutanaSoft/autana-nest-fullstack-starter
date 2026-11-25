@@ -45,6 +45,7 @@
 | `compression`                              | ^1.8.2   | Compresión gzip de las respuestas                      |
 | Better Auth                                | ^1.7.27  | Biblioteca de autenticación                            |
 | `@better-auth/drizzle-adapter`             | ^1.7.27  | Adaptador de Better Auth para Drizzle                  |
+| `@thallesp/nestjs-better-auth`             | 2.8.0    | Integración de Better Auth con Nest                    |
 | Zod                                        | ^4.6.7   | Validación de esquemas                                 |
 | OpenAPI                                    | 3.0      | Especificación de APIs                                 |
 | SWC (`@swc/core` y `@swc/cli`)             | ^1.16.22 | Compilador de la API                                   |
