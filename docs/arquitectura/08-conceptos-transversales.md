@@ -36,9 +36,10 @@ servicio contiene las reglas y las consultas.
   `@ApiUnauthorizedResponse` y similares, indicando `standardSchema: errorResponseSchema`.
 - Un `DELETE` sin cuerpo responde `204` con `@HttpCode(204)`.
 - Si todas las rutas del módulo exigen que no se guarde la respuesta, el módulo registra el middleware `noStore` en
-  `configure(consumer)`. Las rutas exigen sesión salvo que se marquen con `@Public()`.
+  `configure(consumer)`. Las rutas exigen sesión salvo que se marquen con `@AllowAnonymous()`.
 
-El controlador recibe el identificador del usuario con `@CurrentUserId()` y lo pasa al servicio. En el servicio:
+El controlador recibe la sesión con `@Session() session: UserSession` y pasa `session.user.id` al servicio. En el
+servicio:
 
 1. Consulta con Drizzle y autoriza. Limita siempre el acceso a la cuenta autenticada y lanza `NotFoundException` cuando
    un recurso es ajeno, para no revelar qué identificadores existen.
@@ -112,37 +113,57 @@ devuelve un cuerpo declara su esquema con `@ResponseSchema`; una ruta sin esquem
 - Un mapper es una función tipada y no valida en ejecución lo que recibe de una consulta de Drizzle, porque el tipo ya
   lo garantiza. Solo valida con un esquema Zod cuando la entrada es externa o no tiene forma fija, como la respuesta de
   otro servicio o una columna `jsonb`. El esquema vive en `mappers/` junto al mapper y no forma parte del contrato.
-- Una ruta que usa `@Res()`, como la de la librería de autenticación, no pasa por el interceptor.
+- Las rutas de la librería de autenticación no pasan por el interceptor: Better Auth las atiende como middleware.
 
 ### Autenticación y autorización
 
-- La librería de autenticación atiende por sí misma sus rutas bajo `/v1/auth/*`, con sus propios contratos y códigos de
-  error. `AuthController` las recibe con una única ruta comodín marcada `@Public()` y oculta de la documentación. No
-  definas rutas de autenticación propias.
-- `auth.provider.ts` crea la instancia de Better Auth como un provider (token `AUTH`) con la configuración validada. Usa
-  `@better-auth/drizzle-adapter` con `advanced.database.generateId: "uuid"`, que con PostgreSQL delega la generación del
-  id en la base de datos. Habilita el acceso con correo y contraseña (de 8 a 64 caracteres) y acepta peticiones del
-  origen de la variable `WEB_ORIGIN` (`http://localhost:5173` por defecto). El plugin `openAPI`, que publica
-  `/v1/auth/reference`, solo se registra cuando la documentación está activa (`openApiConfig.enabled`).
+- La integración usa `@thallesp/nestjs-better-auth`. `AuthModule.forRootAsync`, registrado en
+  `modules/auth/auth.module.ts`, monta Better Auth como un middleware de Express en `/v1/auth/*`, con sus propios
+  contratos y códigos de error, y excluye esa ruta del prefijo global. No definas rutas de autenticación propias ni
+  controladores que las reenvíen.
+- `auth.ts` crea la instancia de Better Auth con la configuración validada. Usa `@better-auth/drizzle-adapter` con
+  `advanced.database.generateId: "uuid"`, que con PostgreSQL delega la generación del id en la base de datos. Habilita
+  el acceso con correo y contraseña (de 8 a 64 caracteres) y acepta peticiones del origen de la variable `WEB_ORIGIN`
+  (`http://localhost:5173` por defecto). El plugin `openAPI`, que publica `/v1/auth/reference`, solo se registra cuando
+  la documentación está activa (`openApiConfig.enabled`). `hooks` y `databaseHooks` van vacíos: el paquete los necesita
+  para registrar los hooks de las clases con `@Hook()` y `@DatabaseHook()`.
+- El adaptador usa `transaction: true`, de modo que las operaciones de Better Auth que escriben varias filas, como el
+  registro, se ejecutan en una transacción: si falla la inserción de la cuenta, no queda un usuario sin cuenta.
+  `advanced.database.joins: true` reduce las consultas de la sesión (una menos en cada petición protegida) y exige las
+  relaciones de Drizzle de `schema/auth.ts` (`userRelations`, `sessionRelations` y `accountRelations`), que se pasan al
+  adaptador con el resto del schema.
+- `auth.ts` fija el `basePath` en `${apiBasePath}/auth`. La variable de entorno con la URL base no debe incluir una
+  ruta, porque tendría prioridad; el esquema de entorno lo comprueba.
 - Las reglas de la cuenta (nombre, correo y contraseña) viven en `packages/contracts/src/auth.ts` y las usan el
-  formulario y el servidor. El servidor las aplica en `databaseHooks.user.create.before` y `update.before`
-  (`user-validation.ts`), para cubrir todos los endpoints que crean o modifican un usuario, no solo el registro. Guarda
-  los valores normalizados (nombre recortado, correo en minúsculas) y, si una regla falla, responde `400` con
+  formulario y el servidor. El servidor las aplica en `UserValidationHook` (`@BeforeCreate("user")` y
+  `@BeforeUpdate("user")`), para cubrir todos los endpoints que crean o modifican un usuario, no solo el registro.
+  Guarda los valores normalizados (nombre recortado, correo en minúsculas) y, si una regla falla, responde `400` con
   `INVALID_NAME` o `INVALID_EMAIL` y un `message` fijo. Los mensajes de las reglas son el texto del formulario y nunca
   salen de la API. Los límites de la contraseña (`passwordLength`) se leen del mismo contrato en la configuración de
   Better Auth.
-- `AuthController` no devuelve la respuesta de la librería tal cual. Reconstruye la petición con los bytes originales
-  (`rawBody`), copia la respuesta al `Response` de Express y reescribe los errores con `errorResponseSchema`: conserva
-  el `code` y el `message` originales, salvo `VALIDATION_ERROR`, que lleva el mensaje fijo `Validation error` porque el
-  original contiene el detalle de Zod. Deja intactas las respuestas correctas y las redirecciones. La referencia
-  `/v1/auth/reference` sigue describiendo los errores con la forma original de la librería.
-- `auth.provider.ts` fija el `basePath` en `${apiBasePath}/auth`, de modo que coincide con la ruta del controlador. La
-  variable de entorno con la URL base no debe incluir una ruta, porque tendría prioridad; el esquema de entorno lo
-  comprueba.
-- `SessionGuard` es un guard global (`APP_GUARD` en `AuthModule`). Exige una sesión válida y publica el identificador
-  del usuario en la petición, que el controlador lee con `@CurrentUserId()`. Sin sesión responde `401` con el código
-  `SESSION_REQUIRED` y un mensaje fijo, que no distingue una cookie ausente, caducada o manipulada. `@Public()` abre una
-  ruta o un controlador al guard.
+- Las respuestas de `/v1/auth/*` no pasan por `AllExceptionsFilter`: los errores tienen la forma nativa de Better Auth
+  (`{ code, message }`), sin `requestId` ni `statusCode`, y coinciden con lo que documenta `/v1/auth/reference`. El
+  `message` de `VALIDATION_ERROR` incluye el detalle del esquema de Better Auth. El cliente de Better Auth del frontend
+  lee `error.code` de esa forma.
+- `AuthGuard` es un guard global (`APP_GUARD`, registrado por `AuthModule`). Deja la sesión en `request.session` y
+  `request.user`, y el controlador la lee con `@Session()`. Sin sesión lanza `UnauthorizedException`, que
+  `AllExceptionsFilter` responde con `401` y el código `SESSION_REQUIRED` y un mensaje fijo, que no distingue una cookie
+  ausente, caducada o manipulada. `@AllowAnonymous()` abre una ruta o un controlador al guard.
+- Límite de intentos de acceso: Better Auth aplica el suyo a `/v1/auth/*` (3 peticiones cada 10 s en `/sign-in`,
+  `/sign-up` y `/change-password`, solo con `NODE_ENV=production`), porque `ThrottlerGuard` no alcanza esas rutas. Toma
+  la IP de `X-Forwarded-For`, que sin proxy es falsificable y, con una cadena de proxies, no se puede resolver: todos
+  los clientes compartirían el contador. Con `CLIENT_IP_HEADER` (por ejemplo `CF-Connecting-IP` detrás de Cloudflare) la
+  toma de esa cabecera, que solo es fiable si el proxy la sobrescribe siempre y el servidor no acepta tráfico que no
+  pase por él.
+- Con `NODE_ENV=production`, la cookie de sesión lleva `Secure` aunque el proceso reciba `http` de un proxy.
+- El plugin `admin` de Better Auth (`admin()` en `auth.ts`, con sus valores por defecto) añade el rol y el baneo de la
+  cuenta: `user.role` (`user` por defecto), `banned`, `banReason` y `banExpires`, y `session.impersonatedBy`. Sus rutas
+  están bajo `/v1/auth/admin/*` (`set-role`, `ban-user`, `unban-user`, `list-users`, `impersonate-user` y otras), con el
+  formato de error nativo de Better Auth, y solo las usa quien tiene el rol `admin`; sin control de acceso propio no
+  existen más roles. Un usuario baneado recibe `403` con el código `BANNED_USER` al iniciar sesión, y banearlo revoca
+  sus sesiones. Un baneo con fecha de vencimiento pasada se levanta solo en el siguiente inicio de sesión. Para proteger
+  una ruta propia por rol se usa `@Roles(["admin"])`, que lee `session.user.role`. No hay un primer administrador: el
+  rol se asigna con SQL directo.
 - La autorización se hace en el servicio: toda consulta se limita a la cuenta autenticada, y un recurso ajeno responde
   `404`.
 
@@ -202,9 +223,12 @@ autenticación lo añade a las suyas. Los middlewares del módulo se ejecutan an
 - Los identificadores son `uuid` y los genera PostgreSQL con `gen_random_uuid()`. Las columnas de fecha son
   `timestamptz` (`timestamp` con `withTimezone: true`).
 - `packages/database/src/schema/auth.ts` define las tablas de Better Auth (`user`, `session`, `account` y
-  `verification`) y es la fuente de verdad: no se regenera con la CLI de Better Auth, que crea los ids como texto y las
-  fechas sin zona horaria. Better Auth comprueba que el esquema coincida con lo que necesita (`validateSchema`, activo
-  fuera de producción).
+  `verification`, con las columnas del plugin `admin`) y es la fuente de verdad. Lo genera la CLI de Better Auth y solo
+  se personaliza en dos puntos: las columnas de fecha son `timestamptz`, porque la CLI crea `timestamp` sin zona
+  horaria, y `updated_at` de `session` y `account` tiene `defaultNow()`. Así, al regenerarlo en un archivo temporal las
+  diferencias se limitan a esas personalizaciones y a lo que cambie en Better Auth; la guía
+  [Regenerar y comparar el esquema de Better Auth](../guias/backend/esquema-better-auth.md) explica cómo. Better Auth
+  comprueba que el esquema coincida con lo que necesita (`validateSchema`, activo fuera de producción).
 
 ### Configuración y entornos
 
@@ -465,7 +489,7 @@ integración, solo en el backend. Las de extremo a extremo todavía no existen.
   lógica pura, sin consultas, se prueba de forma unitaria; si depende de otro provider, se sustituye con `useValue` en
   `Test.createTestingModule`, como muestra la guía
   [Escribir una prueba en el backend](../guias/backend/nueva-prueba.md).
-- **Guards globales.** `ThrottlerGuard` y `SessionGuard` se registran con `{ provide: APP_GUARD, useClass: ... }`, y ni
+- **Guards globales.** `ThrottlerGuard` y `AuthGuard` se registran con `{ provide: APP_GUARD, useClass: ... }`, y ni
   `overrideGuard` ni `overrideProvider` alcanzan a un guard registrado así
   (`.agents/skills/nestjs-testing/references/testing.md`). Por eso no se sustituyen: el límite de peticiones se prueba
   recargando la aplicación con `NODE_ENV=production`, y la sesión, con el flujo real de `signUp`.

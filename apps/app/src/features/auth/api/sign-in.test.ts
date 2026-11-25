@@ -38,6 +38,19 @@ describe("signIn", () => {
     await expect(signIn(credentials)).rejects.toThrow("Correo o contraseña incorrectos.")
   })
 
+  it("traduce BANNED_USER", async () => {
+    server.use(
+      http.post("*/v1/auth/sign-in/email", () =>
+        HttpResponse.json(
+          { code: "BANNED_USER", message: "You have been banned from this application" },
+          { status: 403 }
+        )
+      )
+    )
+
+    await expect(signIn(credentials)).rejects.toThrow("Tu cuenta está suspendida. Contacta con soporte.")
+  })
+
   it("usa un mensaje genérico para cualquier otro error", async () => {
     server.use(
       http.post("*/v1/auth/sign-in/email", () => HttpResponse.json({ code: "INTERNAL_ERROR" }, { status: 500 }))

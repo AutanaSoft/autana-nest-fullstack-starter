@@ -15,6 +15,7 @@ export function createErrorResponse(statusCode: number, code: string, message: s
 // Código y mensaje públicos de un estado HTTP. El mensaje es fijo para no exponer el detalle de la excepción.
 export function describeHttpError(statusCode: number) {
   if (statusCode === 400) return { code: "BAD_REQUEST", message: "Bad request" }
+  if (statusCode === 401) return { code: "SESSION_REQUIRED", message: "Session required" }
   if (statusCode === 404) return { code: "NOT_FOUND", message: "Resource not found" }
   if (statusCode === 415)
     return {

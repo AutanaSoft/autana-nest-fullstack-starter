@@ -4,12 +4,12 @@ import { apiBasePath } from "@autana/contracts/api"
 import { errorResponseSchema } from "@autana/contracts/errors"
 import supertest from "supertest"
 
-import { Public } from "../../src/modules/auth/decorators/public.decorator.js"
+import { AllowAnonymous } from "@thallesp/nestjs-better-auth"
 import { createTestApp } from "../support/test-app.js"
 import { createClient, webOrigin } from "../support/test-client.js"
 
 // Ruta de prueba con una respuesta lo bastante grande para que se comprima.
-@Public()
+@AllowAnonymous()
 @Controller("test")
 class LargeResponseController {
   @Get("large")

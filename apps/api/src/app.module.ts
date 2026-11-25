@@ -58,7 +58,7 @@ const readMethods = ["GET", "HEAD", "OPTIONS"]
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
     // Valida y filtra toda respuesta con el esquema del contrato que declara `@SerializeOptions({ schema })`.
     { provide: APP_INTERCEPTOR, useClass: StandardSchemaSerializerInterceptor },
-    // Debe ir en el módulo raíz: sus guards globales se ejecutan antes que el de sesión.
+    // Debe ir en el módulo raíz: sus guards globales se ejecutan antes que el de sesión (`AuthGuard`).
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })

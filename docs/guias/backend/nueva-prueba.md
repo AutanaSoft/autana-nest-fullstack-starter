@@ -66,8 +66,7 @@ describe("validateEnv", () => {
 ```
 
 Una regla de un servicio que no consulta la base de datos se prueba con `Test.createTestingModule`. Las dependencias se
-sustituyen con `useValue`, y un token como `AUTH` se sustituye igual, con `{ provide: AUTH, useValue }`. Las reglas que
-consultan la base se prueban en integración, como explica
+sustituyen con `useValue`. Las reglas que consultan la base se prueban en integración, como explica
 [Reglas de un servicio](../../arquitectura/08-conceptos-transversales.md#particularidades-del-backend).
 
 ```ts

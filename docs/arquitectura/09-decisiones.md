@@ -30,10 +30,10 @@
   Zod.
 - **Los servicios se inyectan por su clase, y un token solo cuando el valor no es una clase.** Una interfaz no existe en
   ejecución y no sirve como token, por lo que crear una interfaz y un token por servicio añadiría una capa sin
-  necesidad. El `Symbol` con `@Inject()` se reserva para valores que no son clases, como `AUTH`, o para varias
-  implementaciones reales, y las pruebas sustituyen un provider con `useValue` o `overrideProvider`. Alternativa
-  descartada: una interfaz y un token por servicio, y elegir la implementación con `process.env`, que se salta la
-  configuración validada de `@nestjs/config`.
+  necesidad. El `Symbol` con `@Inject()` se reserva para valores que no son clases o para varias implementaciones
+  reales, y las pruebas sustituyen un provider con `useValue` o `overrideProvider`. Alternativa descartada: una interfaz
+  y un token por servicio, y elegir la implementación con `process.env`, que se salta la configuración validada de
+  `@nestjs/config`.
 - **Una base de pruebas compartida, con aislamiento por prefijo de correo.** Todos los archivos de integración usan
   `<base>_test` y cada uno elimina solo los usuarios de su prefijo, por lo que no hay que crear ni migrar una base por
   archivo. Alternativa descartada: una base o un esquema por archivo, que añade creación y migración sin una necesidad
@@ -96,8 +96,17 @@
   esquema, de modo que llamar a la API directamente no permite saltarse las reglas. Se aplican en los hooks de base de
   datos de Better Auth y no solo en `/sign-up/email`, porque `/update-user` también cambia el nombre. Alternativa
   descartada: validar solo en el formulario.
-- **Guard de sesión global y `@Public()`.** Toda ruta exige sesión salvo que se marque lo contrario, de modo que una
-  ruta nueva nace protegida. Alternativa descartada: aplicar el guard controlador a controlador.
+- **Better Auth con `@thallesp/nestjs-better-auth`.** El paquete monta Better Auth, registra un guard de sesión global y
+  aporta `@AllowAnonymous()`, `@Session()` y los hooks con decoradores, de modo que el proyecto no mantiene su propio
+  puente entre Nest y Better Auth. Toda ruta exige sesión salvo que se marque lo contrario, de modo que una ruta nueva
+  nace protegida. Consecuencia: las rutas `/v1/auth/*` no pasan por los filtros ni por el límite de peticiones de Nest y
+  devuelven los errores nativos de Better Auth. Alternativa descartada: un controlador propio que reenvía la petición y
+  reescribe los errores.
+- **Rol y baneo con el plugin `admin` de Better Auth.** Aporta el rol, el baneo y sus rutas de administración sin código
+  propio, y `@Roles()` del paquete de Nest ya lee su campo `role`. Se usan sus permisos por defecto, incluidos los de
+  suplantar a un usuario, cambiar su contraseña y borrarlo. Alternativa descartada: un campo `status` propio, que
+  obligaría a rechazar el inicio de sesión y a revocar las sesiones a mano; se reconsidera si hacen falta más estados
+  que activo y suspendido.
 - **Sin caché de servidor y `no-store` en las rutas con datos del usuario.** Evita que el navegador o un proxy guarden
   respuestas privadas.
 - **`@nestjs/throttler` para el límite de peticiones.** Es el paquete oficial. Alternativa descartada: uno propio, que

@@ -1,5 +1,4 @@
 import type { NestExpressApplication } from "@nestjs/platform-express"
-import { errorResponseSchema } from "@autana/contracts/errors"
 import { user } from "@autana/database/schema/auth"
 import { eq } from "drizzle-orm"
 
@@ -32,39 +31,34 @@ describe("autenticación", () => {
     }
   }
 
-  describe("errores de Better Auth con el contrato público", () => {
-    it("credenciales incorrectas responden 401 con el code original", async () => {
+  describe("errores nativos de Better Auth", () => {
+    // Las rutas de Better Auth no pasan por los filtros de Nest: responden `{ message, code }`, sin `requestId`.
+    it("credenciales incorrectas responden 401 con su code", async () => {
       const response = await post("/sign-in/email", {
         email: `${emailPrefix}nadie@mail.com`,
         password: "12345678",
       })
-      const body = errorResponseSchema.parse(response.body)
 
       expect(response.status).toBe(401)
-      expect(body).toMatchObject({
+      expect(response.body).toEqual({
         message: "Invalid email or password",
-        error: "Unauthorized",
-        statusCode: 401,
         code: "INVALID_EMAIL_OR_PASSWORD",
       })
-      expect(body.requestId).toBe(response.headers["x-request-id"])
+      expect(response.headers["x-request-id"]).toBeTruthy()
     })
 
-    it("una ruta inexistente de la librería responde 404 con el contrato", async () => {
+    it("una ruta inexistente de la librería responde 404", async () => {
       const response = await client.request("/auth/no-existe")
 
       expect(response.status).toBe(404)
-      expect(errorResponseSchema.parse(response.body).code).toBe("NOT_FOUND")
+      expect(response.headers["x-request-id"]).toBeTruthy()
     })
 
-    it("un cuerpo que no cumple el esquema responde 400 con un mensaje fijo", async () => {
+    it("un cuerpo que no cumple el esquema responde 400 con VALIDATION_ERROR", async () => {
       const response = await post("/sign-up/email", { name: 1 })
 
       expect(response.status).toBe(400)
-      expect(errorResponseSchema.parse(response.body)).toMatchObject({
-        code: "VALIDATION_ERROR",
-        message: "Validation error",
-      })
+      expect(response.body.code).toBe("VALIDATION_ERROR")
     })
 
     it("una contraseña corta responde 400", async () => {
@@ -74,7 +68,7 @@ describe("autenticación", () => {
       })
 
       expect(response.status).toBe(400)
-      expect(errorResponseSchema.parse(response.body).code).toBe("PASSWORD_TOO_SHORT")
+      expect(response.body.code).toBe("PASSWORD_TOO_SHORT")
     })
 
     it("una contraseña demasiado larga responde 400", async () => {
@@ -84,7 +78,7 @@ describe("autenticación", () => {
       })
 
       expect(response.status).toBe(400)
-      expect(errorResponseSchema.parse(response.body).code).toBe("PASSWORD_TOO_LONG")
+      expect(response.body.code).toBe("PASSWORD_TOO_LONG")
     })
   })
 
@@ -97,11 +91,10 @@ describe("autenticación", () => {
     ])("rechaza el registro con %s", async (_description, overrides, code) => {
       const credentials = { ...newUser(), ...overrides }
       const response = await post("/sign-up/email", credentials)
-      const body = errorResponseSchema.parse(response.body)
 
       expect(response.status).toBe(400)
-      expect(body).toMatchObject({ statusCode: 400, code })
-      expect(body.message).toMatch(/^Invalid (name|email)$/)
+      expect(response.body.code).toBe(code)
+      expect(response.body.message).toMatch(/^Invalid (name|email)$/)
       expect(await client.db.select().from(user).where(eq(user.email, credentials.email.toLowerCase()))).toHaveLength(0)
     })
 
@@ -122,7 +115,7 @@ describe("autenticación", () => {
       const session = await client.request("/auth/get-session", { cookie })
 
       expect(update.status).toBe(400)
-      expect(errorResponseSchema.parse(update.body).code).toBe("INVALID_NAME")
+      expect(update.body.code).toBe("INVALID_NAME")
       expect(session.body.user.name).toBe("Ana Ruiz")
     })
 
@@ -158,7 +151,7 @@ describe("autenticación", () => {
 
       const duplicate = await post("/sign-up/email", credentials)
       expect(duplicate.status).toBe(422)
-      expect(errorResponseSchema.parse(duplicate.body).code).toBe("USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL")
+      expect(duplicate.body.code).toBe("USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL")
 
       const signIn = await post("/sign-in/email", {
         email: credentials.email,
