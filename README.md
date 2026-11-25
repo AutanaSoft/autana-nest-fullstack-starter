@@ -81,6 +81,7 @@ detalles están en la [guía de configuración](./docs/guias/general/configuraci
 - [Definir una configuración en el backend](./docs/guias/backend/nueva-configuracion.md)
 - [Dividir un servicio por responsabilidad](./docs/guias/backend/nuevo-servicio.md)
 - [Escribir una prueba en el backend](./docs/guias/backend/nueva-prueba.md)
+- [Regenerar y comparar el esquema de Better Auth](./docs/guias/backend/esquema-better-auth.md)
 - [Crear una funcionalidad en el frontend](./docs/guias/frontend/nueva-funcionalidad/README.md)
 - [Añadir componentes de shadcn/ui](./docs/guias/frontend/componentes-shadcn.md)
 - [Retirar las funcionalidades de ejemplo](./docs/guias/general/retirar-funcionalidades-de-ejemplo.md)

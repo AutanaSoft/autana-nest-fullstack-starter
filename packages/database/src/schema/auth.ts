@@ -1,61 +1,59 @@
+// Generado con la CLI de Better Auth (`npx auth generate`) y personalizado en solo dos puntos, para poder comparar con
+// una regeneración y que las diferencias se vean únicamente donde las necesitamos:
+//   1. Todas las columnas de fecha usan `{ withTimezone: true }` (`timestamptz`): la CLI genera `timestamp` sin zona.
+//   2. `updated_at` de `session` y `account` tiene `defaultNow()`, como en `user` y `verification`.
+// Better Auth comprueba que el esquema siga coincidiendo con las tablas que necesita (opción validateSchema).
 import { relations, sql } from "drizzle-orm"
-import { boolean, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
-
-// Este esquema es la fuente de verdad: no se regenera con la CLI de Better Auth, que crea
-// los ids como texto y las fechas sin zona horaria. Better Auth comprueba que siga
-// coincidiendo con las tablas que necesita (opción validateSchema).
-const timestamptz = (name: string) => timestamp(name, { withTimezone: true })
+import { pgTable, text, timestamp, boolean, uuid, index } from "drizzle-orm/pg-core"
 
 export const user = pgTable("user", {
   id: uuid("id")
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
+    .default(sql`pg_catalog.gen_random_uuid()`)
+    .primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
-  // Los añade el plugin `admin` de Better Auth: el rol y el baneo de la cuenta.
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
   role: text("role"),
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
-  banExpires: timestamptz("ban_expires"),
-  createdAt: timestamptz("created_at").defaultNow().notNull(),
-  updatedAt: timestamptz("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
+  banExpires: timestamp("ban_expires", { withTimezone: true }),
 })
 
 export const session = pgTable(
   "session",
   {
     id: uuid("id")
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
-    expiresAt: timestamptz("expires_at").notNull(),
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     token: text("token").notNull().unique(),
-    createdAt: timestamptz("created_at").defaultNow().notNull(),
-    updatedAt: timestamptz("updated_at")
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
-      .$onUpdate(() => new Date())
+      .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
-    // Lo añade el plugin `admin`: quién suplanta al usuario de la sesión, si alguien lo hace.
-    impersonatedBy: text("impersonated_by"),
     userId: uuid("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    impersonatedBy: text("impersonated_by"),
   },
-  (table) => [index("session_user_id_idx").on(table.userId)]
+  (table) => [index("session_userId_idx").on(table.userId)]
 )
 
 export const account = pgTable(
   "account",
   {
     id: uuid("id")
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
     userId: uuid("user_id")
@@ -64,32 +62,32 @@ export const account = pgTable(
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
     idToken: text("id_token"),
-    accessTokenExpiresAt: timestamptz("access_token_expires_at"),
-    refreshTokenExpiresAt: timestamptz("refresh_token_expires_at"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { withTimezone: true }),
     scope: text("scope"),
     password: text("password"),
-    createdAt: timestamptz("created_at").defaultNow().notNull(),
-    updatedAt: timestamptz("updated_at")
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
-      .$onUpdate(() => new Date())
+      .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
-  (table) => [index("account_user_id_idx").on(table.userId)]
+  (table) => [index("account_userId_idx").on(table.userId)]
 )
 
 export const verification = pgTable(
   "verification",
   {
     id: uuid("id")
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
-    expiresAt: timestamptz("expires_at").notNull(),
-    createdAt: timestamptz("created_at").defaultNow().notNull(),
-    updatedAt: timestamptz("updated_at")
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
-      .$onUpdate(() => new Date())
+      .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)]
@@ -101,9 +99,15 @@ export const userRelations = relations(user, ({ many }) => ({
 }))
 
 export const sessionRelations = relations(session, ({ one }) => ({
-  user: one(user, { fields: [session.userId], references: [user.id] }),
+  user: one(user, {
+    fields: [session.userId],
+    references: [user.id],
+  }),
 }))
 
 export const accountRelations = relations(account, ({ one }) => ({
-  user: one(user, { fields: [account.userId], references: [user.id] }),
+  user: one(user, {
+    fields: [account.userId],
+    references: [user.id],
+  }),
 }))

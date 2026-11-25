@@ -223,9 +223,12 @@ autenticación lo añade a las suyas. Los middlewares del módulo se ejecutan an
 - Los identificadores son `uuid` y los genera PostgreSQL con `gen_random_uuid()`. Las columnas de fecha son
   `timestamptz` (`timestamp` con `withTimezone: true`).
 - `packages/database/src/schema/auth.ts` define las tablas de Better Auth (`user`, `session`, `account` y
-  `verification`, con las columnas del plugin `admin`) y es la fuente de verdad: no se regenera con la CLI de Better
-  Auth, que crea los ids como texto y las fechas sin zona horaria. Better Auth comprueba que el esquema coincida con lo
-  que necesita (`validateSchema`, activo fuera de producción).
+  `verification`, con las columnas del plugin `admin`) y es la fuente de verdad. Lo genera la CLI de Better Auth y solo
+  se personaliza en dos puntos: las columnas de fecha son `timestamptz`, porque la CLI crea `timestamp` sin zona
+  horaria, y `updated_at` de `session` y `account` tiene `defaultNow()`. Así, al regenerarlo en un archivo temporal las
+  diferencias se limitan a esas personalizaciones y a lo que cambie en Better Auth; la guía
+  [Regenerar y comparar el esquema de Better Auth](../guias/backend/esquema-better-auth.md) explica cómo. Better Auth
+  comprueba que el esquema coincida con lo que necesita (`validateSchema`, activo fuera de producción).
 
 ### Configuración y entornos
 
