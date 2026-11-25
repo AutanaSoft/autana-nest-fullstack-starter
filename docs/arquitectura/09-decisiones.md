@@ -96,7 +96,7 @@
   `hooks.after` tampoco ve el `404` ni el JSON mal formado. Unificarlas exigiría reescribir la respuesta de Node
   (`writeHead`, `write` y `end`), lo que depende de cómo escribe `better-call`. El cliente decide por `code`, que Better
   Auth ya informa, y todas sus respuestas llevan `X-Request-Id`. Alternativa descartada: una capa propia que reescriba
-  los errores, como el controlador manual que se eliminó.
+  los errores.
 - **Esquema de autenticación generado con la CLI de Better Auth, con dos personalizaciones.** Al regenerarlo en un
   archivo temporal, las diferencias se limitan a las fechas con zona horaria, a `defaultNow()` en `updated_at` de
   `session` y `account`, y a lo que cambie Better Auth. Alternativas descartadas: un esquema escrito a mano, que oculta
