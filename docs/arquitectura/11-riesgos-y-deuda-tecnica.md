@@ -9,8 +9,15 @@ Cada entrada indica por qué se difiere y la condición que obliga a resolverla.
 
 - **Las rutas `/v1/auth/*` no cumplen el contrato de error de la API** (`errorResponseSchema`) ni las cuenta
   `ThrottlerGuard`.
-  - Por qué se difiere: Better Auth las atiende como middleware, fuera de los filtros y guards de Nest.
-  - Condición: si se necesita el contrato de error en esas rutas, hay que normalizarlo en un middleware propio.
+  - Por qué se difiere: Better Auth las atiende como middleware, fuera de los filtros y guards de Nest, y ninguno de sus
+    puntos de extensión alcanza todas las respuestas (ver [decisiones](./09-decisiones.md)).
+  - Condición: si un consumidor necesita el contrato en esas rutas, hay que reescribir la respuesta de Node en la opción
+    `middleware` de `AuthModule`.
+- **El límite de peticiones de Nest toma la IP de la última entrada de `X-Forwarded-For`.** Con más de un proxy, por
+  ejemplo Cloudflare y Apache, es la del proxy más cercano y todos los clientes comparten contador.
+  - Por qué se difiere: `CLIENT_IP_HEADER` resuelve la IP del cliente solo para el límite de Better Auth; extenderlo al
+    `ThrottlerGuard` queda por decidir.
+  - Condición: antes de desplegar detrás de más de un proxy.
 - **El límite de peticiones guarda los contadores en la memoria del proceso.**
   - Por qué se difiere: con una sola instancia basta y no añade infraestructura.
   - Condición: si la API se despliega con varias instancias, hay que usar un almacén compartido.

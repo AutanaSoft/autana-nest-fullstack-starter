@@ -17,7 +17,8 @@
 - **Tipos inferidos.** Los tipos salen de los esquemas Zod (`z.infer`) y no se declaran clases DTO.
 - **Respuestas filtradas.** Todo cuerpo correcto se valida y se filtra con el esquema del contrato antes de salir, de
   modo que ningún dato interno llega al cliente.
-- **Errores públicos estables.** Cada error expone un código propio y nunca el detalle interno.
+- **Errores públicos estables.** Cada error de las rutas de Nest expone un código propio y nunca el detalle interno. Las
+  rutas de `/v1/auth/*` devuelven los errores nativos de Better Auth, con su propio `code`.
 
 ## Frontend
 

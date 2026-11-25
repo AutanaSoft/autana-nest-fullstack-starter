@@ -38,8 +38,9 @@ referencias por las de tu primera funcionalidad:
 - `features/panel/components/nav-user.tsx`: elimina el elemento "Perfil" o apúntalo a otra ruta. Si lo eliminas, quita
   los imports `Link` y `CircleUserRoundIcon` y la prueba "el menú enlaza con el perfil" de `nav-user.test.tsx`.
 - `app/router.tsx`: redirección de la ruta raíz `/`.
-- `apps/api/test/auth/session.e2e-spec.ts`: usa `GET /tasks` como ruta protegida de ejemplo en tres pruebas (cierre de
-  sesión y expiración). Cámbiala por una ruta de tu API que exija sesión.
+- `apps/api/test/auth/session.e2e-spec.ts`, `test/auth/admin.e2e-spec.ts`, `test/common/production.e2e-spec.ts` y
+  `test/common/middleware.e2e-spec.ts`: usan `/tasks` como ruta protegida de ejemplo (cierre de sesión, expiración,
+  baneo, límite de peticiones y middlewares). Cámbiala por una ruta de tu API que exija sesión.
 - Pruebas del frontend que esperan `/tasks` o `/profile`: `router.test.tsx`, `auth-layout.test.tsx`,
   `sign-in-page.test.tsx` y `sign-up-page.test.tsx`. Las del panel (`nav-main`, `site-header`, `panel-layout`) usan
   `/tasks` solo como ruta de prueba y no fallan, pero conviene renombrarla.
