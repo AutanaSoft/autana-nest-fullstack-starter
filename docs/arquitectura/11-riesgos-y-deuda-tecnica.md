@@ -13,11 +13,6 @@ Cada entrada indica por qué se difiere y la condición que obliga a resolverla.
     puntos de extensión alcanza todas las respuestas (ver [decisiones](./09-decisiones.md)).
   - Condición: si un consumidor necesita el contrato en esas rutas, hay que reescribir la respuesta de Node en la opción
     `middleware` de `AuthModule`.
-- **El límite de peticiones de Nest toma la IP de la última entrada de `X-Forwarded-For`.** Con más de un proxy, por
-  ejemplo Cloudflare y Apache, es la del proxy más cercano y todos los clientes comparten contador.
-  - Por qué se difiere: `CLIENT_IP_HEADER` resuelve la IP del cliente solo para el límite de Better Auth; extenderlo al
-    `ThrottlerGuard` queda por decidir.
-  - Condición: antes de desplegar detrás de más de un proxy.
 - **El límite de peticiones guarda los contadores en la memoria del proceso.**
   - Por qué se difiere: con una sola instancia basta y no añade infraestructura.
   - Condición: si la API se despliega con varias instancias, hay que usar un almacén compartido.

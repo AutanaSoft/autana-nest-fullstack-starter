@@ -154,8 +154,8 @@ devuelve un cuerpo declara su esquema con `@ResponseSchema`; una ruta sin esquem
   `/sign-up` y `/change-password`, solo con `NODE_ENV=production`), porque `ThrottlerGuard` no alcanza esas rutas. Toma
   la IP de `X-Forwarded-For`, que sin proxy es falsificable y, con una cadena de proxies, no se puede resolver: todos
   los clientes compartirían el contador. Con `CLIENT_IP_HEADER` (por ejemplo `CF-Connecting-IP` detrás de Cloudflare) la
-  toma de esa cabecera, que solo es fiable si el proxy la sobrescribe siempre y el servidor no acepta tráfico que no
-  pase por él.
+  toma de esa cabecera, igual que el límite de Nest. Solo es fiable si el proxy la sobrescribe siempre y el servidor no
+  acepta tráfico que no pase por él.
 - Con `NODE_ENV=production`, la cookie de sesión lleva `Secure` aunque el proceso reciba `http` de un proxy.
 - El plugin `admin` de Better Auth (`admin()` en `auth.ts`, con sus valores por defecto) añade el rol y el baneo de la
   cuenta: `user.role` (`user` por defecto), `banned`, `banReason` y `banExpires`, y `session.impersonatedBy`. Sus rutas
@@ -192,7 +192,9 @@ Los middlewares globales se registran en `configureApp` (`src/app.setup.ts`) y l
   escrituras (20 por minuto); `AppModule` registra `ThrottlerGuard`, para que se ejecute antes que el guard de sesión.
   `/v1/auth/*` queda fuera, porque Better Auth lo atiende como middleware y aplica su propio límite. Responde
   `429 RATE_LIMITED` con `Retry-After`. Con `TRUST_PROXY=true` toma la IP de la última entrada de `X-Forwarded-For`;
-  actívalo solo detrás de un proxy inverso que la añada.
+  actívalo solo detrás de un proxy inverso que la añada. Con más de un proxy, esa entrada es la del más cercano y todos
+  los clientes compartirían contador: define `CLIENT_IP_HEADER`, que el límite usa si la petición trae esa cabecera y,
+  si no, la IP de la conexión.
 
 ### Caché
 

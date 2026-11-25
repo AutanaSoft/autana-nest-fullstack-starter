@@ -26,9 +26,9 @@
    - `WEB_ORIGIN`: origen del frontend que acepta la API (opcional, `http://localhost:5173` por defecto).
    - `TRUST_PROXY`: `true` solo detrás de un proxy inverso que añada la IP del cliente a `X-Forwarded-For` (opcional,
      `false` por defecto).
-   - `CLIENT_IP_HEADER`: cabecera de la que Better Auth toma la IP del cliente para limitar los intentos de acceso, por
-     ejemplo `CF-Connecting-IP` detrás de Cloudflare (opcional). Úsala solo si el proxy la sobrescribe siempre y el
-     servidor no acepta tráfico que no pase por él.
+   - `CLIENT_IP_HEADER`: cabecera de la que se toma la IP del cliente para el límite de peticiones de Nest y el de
+     intentos de acceso de Better Auth, por ejemplo `CF-Connecting-IP` detrás de Cloudflare (opcional). Úsala solo si el
+     proxy la sobrescribe siempre y el servidor no acepta tráfico que no pase por él.
 
    Variable de [`packages/database/.env`](../../../packages/database/.env.example), que usan los comandos `db:*`:
 

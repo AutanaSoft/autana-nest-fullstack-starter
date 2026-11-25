@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common"
 import { getDrizzleToken } from "@nestjs/drizzle"
 import { AuthModule as BetterAuthModule } from "@thallesp/nestjs-better-auth"
 
+import { appConfig, type AppConfig } from "../../config/app.config.js"
 import { authConfig, type AuthConfig } from "../../config/auth.config.js"
 import { openApiConfig, type OpenApiConfig } from "../../config/openapi.config.js"
 import type { Database } from "../../database/database.js"
@@ -14,9 +15,9 @@ import { UserValidationHook } from "./user-validation.hook.js"
   imports: [
     BetterAuthModule.forRootAsync({
       isGlobal: true,
-      inject: [getDrizzleToken(), authConfig.KEY, openApiConfig.KEY],
-      useFactory: (db: Database, auth: AuthConfig, openApi: OpenApiConfig) => ({
-        auth: createAuth(db, auth, openApi),
+      inject: [getDrizzleToken(), authConfig.KEY, openApiConfig.KEY, appConfig.KEY],
+      useFactory: (db: Database, auth: AuthConfig, openApi: OpenApiConfig, app: AppConfig) => ({
+        auth: createAuth(db, auth, openApi, app),
         // Nest ya aplica `enableCors` con el origen del frontend y las cabeceras de la API (`app.setup.ts`).
         disableTrustedOriginsCors: true,
         // Con `bodyParser: false` en `main.ts`, la librería vuelve a registrar los parsers fuera de las rutas de auth,

@@ -17,6 +17,12 @@ describe("buildAppConfig", () => {
     expect(buildAppConfig({ PORT: "4000", TRUST_PROXY: "true" })).toMatchObject({ PORT: 4000, TRUST_PROXY: true })
   })
 
+  it("normaliza CLIENT_IP_HEADER y trata el valor vacío como no definido", () => {
+    expect(buildAppConfig({ CLIENT_IP_HEADER: "CF-Connecting-IP" }).CLIENT_IP_HEADER).toBe("cf-connecting-ip")
+    expect(buildAppConfig({ CLIENT_IP_HEADER: "" }).CLIENT_IP_HEADER).toBeUndefined()
+    expect(() => buildAppConfig({ CLIENT_IP_HEADER: "no válida" })).toThrow()
+  })
+
   it("rechaza un PORT fuera de rango", () => {
     expect(() => buildAppConfig({ PORT: "70000" })).toThrow()
   })
