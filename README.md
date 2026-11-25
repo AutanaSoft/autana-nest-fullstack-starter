@@ -20,7 +20,8 @@ Esta es la variante con NestJS. Si prefieres Hono, usa
 
 Un monorepo listo para clonar y ampliar, con lo mínimo para que un proyecto nuevo empiece con buenas bases:
 
-- **Autenticación** por correo y contraseña con Better Auth, con protección CSRF y límite de peticiones.
+- **Autenticación** por correo y contraseña con Better Auth, con roles, suspensión de cuentas, protección CSRF y límite
+  de peticiones.
 - **API** con NestJS y validación con Zod, con documentación OpenAPI interactiva en `/v1/docs` en desarrollo.
 - **Contratos compartidos**: los esquemas Zod se definen una vez y los usan la API y el frontend.
 - **Web** con React, React Router, TanStack Query y componentes de shadcn/ui sobre Tailwind CSS 4, con un panel privado.

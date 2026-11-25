@@ -85,13 +85,22 @@
 - **Compilación con SWC y comprobación de tipos aparte.** SWC transforma `src/` y la CLI de Nest lo integra, y
   `tsc --noEmit` comprueba los tipos. Alternativa descartada: empaquetar la API y los paquetes del monorepo en un único
   archivo, que añadiría una herramienta de empaquetado a un framework que ya trae su propia CLI.
-- **Cuerpo de error plano, con `requestId` incluido.** Todos los errores comparten un único esquema, y el usuario puede
-  indicar el identificador al reportar un fallo. `error` y `statusCode` se derivan del mismo estado para que no se
-  desincronicen. `message` es inglés y fijo por `code`, porque el cliente decide por `code`.
-- **Un único filtro de excepciones.** `AllExceptionsFilter` da a todo error, incluidos los de los guards y los pipes, el
-  mismo contrato, y los servicios indican el código público de cada operación en la propia excepción.
-- **Errores de Better Auth reescritos con el mismo esquema.** El cliente recibe un único formato en toda la API, y
-  conserva el `code` y el `message` originales. Alternativa descartada: dejar la forma de la librería como excepción.
+- **Cuerpo de error plano, con `requestId` incluido.** Los errores de las rutas de Nest comparten un único esquema, y el
+  usuario puede indicar el identificador al reportar un fallo. `error` y `statusCode` se derivan del mismo estado para
+  que no se desincronicen. `message` es inglés y fijo por `code`, porque el cliente decide por `code`.
+- **Un único filtro de excepciones.** `AllExceptionsFilter` da a todo error de las rutas de Nest, incluidos los de los
+  guards y los pipes, el mismo contrato, y los servicios indican el código público de cada operación en la propia
+  excepción.
+- **Errores de `/v1/auth/*` en la forma nativa de Better Auth.** Better Auth atiende esas rutas como middleware y ningún
+  mecanismo suyo alcanza todas las respuestas: `onResponse` de un plugin no ve el `429` del límite de intentos, y
+  `hooks.after` tampoco ve el `404` ni el JSON mal formado. Unificarlas exigiría reescribir la respuesta de Node
+  (`writeHead`, `write` y `end`), lo que depende de cómo escribe `better-call`. El cliente decide por `code`, que Better
+  Auth ya informa, y todas sus respuestas llevan `X-Request-Id`. Alternativa descartada: una capa propia que reescriba
+  los errores, como el controlador manual que se eliminó.
+- **Esquema de autenticación generado con la CLI de Better Auth, con dos personalizaciones.** Al regenerarlo en un
+  archivo temporal, las diferencias se limitan a las fechas con zona horaria, a `defaultNow()` en `updated_at` de
+  `session` y `account`, y a lo que cambie Better Auth. Alternativas descartadas: un esquema escrito a mano, que oculta
+  lo que cambia Better Auth, y usar la salida tal cual, que crea `timestamp` sin zona horaria.
 - **Reglas de la cuenta en el contrato, aplicadas también por el servidor.** El formulario y la API validan con el mismo
   esquema, de modo que llamar a la API directamente no permite saltarse las reglas. Se aplican en los hooks de base de
   datos de Better Auth y no solo en `/sign-up/email`, porque `/update-user` también cambia el nombre. Alternativa

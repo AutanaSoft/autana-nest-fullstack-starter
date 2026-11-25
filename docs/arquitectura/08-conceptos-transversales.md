@@ -61,8 +61,9 @@ Consulta la guía [Definir una ruta en el backend](../guias/backend/nueva-ruta.m
 (`param`, `query` o `body`). El pipe estándar no informa del destino, por lo que cada controlador declara los códigos de
 su módulo.
 
-`AllExceptionsFilter` es el único manejador de errores y responde siempre con el cuerpo de `errorResponseSchema`
-(`packages/contracts/src/errors.ts`):
+`AllExceptionsFilter` es el único manejador de errores de las rutas de Nest y responde siempre con el cuerpo de
+`errorResponseSchema` (`packages/contracts/src/errors.ts`). Las rutas de `/v1/auth/*` no pasan por él: sus errores
+tienen la forma nativa de Better Auth, como explica [Autenticación y autorización](#autenticación-y-autorización).
 
 ```json
 {
@@ -222,7 +223,7 @@ autenticación lo añade a las suyas. Los middlewares del módulo se ejecutan an
   `NODE_ENV=production` y con un nombre de base no válido. Al eliminar `public` se pierden también sus extensiones; la
   plantilla no usa ninguna, y si se añade una debe recrearse en `reset.ts`. Sus pruebas, en `packages/database/test/`,
   usan una base temporal propia, porque el reinicio destruye el esquema.
-- Los identificadores son `uuid` y los genera PostgreSQL con `gen_random_uuid()`. Las columnas de fecha son
+- Los identificadores son `uuid` y los genera PostgreSQL con `pg_catalog.gen_random_uuid()`. Las columnas de fecha son
   `timestamptz` (`timestamp` con `withTimezone: true`).
 - `packages/database/src/schema/auth.ts` define las tablas de Better Auth (`user`, `session`, `account` y
   `verification`, con las columnas del plugin `admin`) y es la fuente de verdad. Lo genera la CLI de Better Auth y solo
