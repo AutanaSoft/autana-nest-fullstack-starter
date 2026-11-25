@@ -43,13 +43,11 @@ Cada entrada indica por qué se difiere y la condición que obliga a resolverla.
   - Mitigación: es una decisión consciente, porque recortarla la modificaría sin avisar al usuario.
 - **Las reglas de dependencia del frontend** se comprueban solo en revisión, sin una regla de lint, como indica la nota
   de [Reglas de dependencia](./05-vista-de-bloques.md#reglas-de-dependencia-1).
-- **No hay integración continua.** Los hooks de Husky y las pruebas locales son la única barrera, y se pueden omitir.
-  - Mitigación: ninguna. Una integración continua debería ejecutar `typecheck`, `lint` y `test`.
 - **No hay [pruebas de extremo a extremo](./08-conceptos-transversales.md#pruebas-de-extremo-a-extremo).** Ninguna
   prueba recorre el frontend y la API juntas en un navegador real, así que no se comprueban la cookie de sesión entre
   recargas, las guardas de ruta ni el proxy de Vite.
-  - Mitigación: las pruebas de componentes (MSW) y las de la API cubren cada lado por separado. Deben reintroducirse al
-    definir el despliegue o la integración continua.
+  - Mitigación: las pruebas de componentes (MSW) y las de la API cubren cada lado por separado. Podrían añadirse a la
+    integración continua al definir el despliegue.
 - **Bajo Vitest, Better Auth desactiva la comprobación de origen,** por lo que `403 INVALID_ORIGIN` no tiene prueba
   automática.
   - Mitigación: se comprueba a mano contra la API en ejecución.
