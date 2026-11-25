@@ -527,6 +527,20 @@ integración, solo en el backend. Las de extremo a extremo todavía no existen.
 - jsdom no implementa `window.matchMedia`, que usan el sidebar y el proveedor del tema. `stubMatchMedia`
   (`src/test/match-media.ts`) lo sustituye en las pruebas que lo necesitan y se deshace con `vi.unstubAllGlobals()`.
 
+### Integración continua
+
+`.github/workflows/ci.yml` se ejecuta en cada pull request y en cada push a `main`, con Node 26, y cancela la ejecución
+anterior de la misma rama. Tiene dos trabajos:
+
+- **Formato, lint y tipos:** `npm ci`, `npm run check` y `npm run build`. Compilar evita que un cambio que pasa las
+  pruebas deje la API o el frontend sin poder construirse.
+- **Pruebas:** levanta PostgreSQL 18 como servicio, copia los `.env.example` de `apps/api` y `packages/database` a
+  `.env` y ejecuta `npm test`. Turborepo solo pasa a las tareas las variables declaradas en `turbo.json`, por lo que las
+  pruebas leen su entorno de esos `.env`.
+
+Además, GitHub ejecuta el análisis de CodeQL en los pull requests. Los hooks de Husky comprueban el código en local,
+pero se pueden omitir; la integración continua es la barrera que no.
+
 ### Pruebas de extremo a extremo
 
 Recorren el frontend y la API juntas en un navegador real, y comprueban lo que ninguna otra capa ve: la cookie de sesión
