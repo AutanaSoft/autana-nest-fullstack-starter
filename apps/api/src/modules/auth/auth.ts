@@ -14,7 +14,7 @@ export function createAuth(db: Database, auth: AuthConfig, openApi: OpenApiConfi
     basePath: `${apiBasePath}/auth`,
     baseURL: auth.BETTER_AUTH_URL,
     secret: auth.BETTER_AUTH_SECRET,
-    database: drizzleAdapter(db, { provider: "pg", schema }),
+    database: drizzleAdapter(db, { provider: "pg", schema, transaction: true }),
     emailAndPassword: {
       enabled: true,
       minPasswordLength: passwordLength.min,
@@ -26,7 +26,7 @@ export function createAuth(db: Database, auth: AuthConfig, openApi: OpenApiConfi
     databaseHooks: {},
     advanced: {
       // Con PostgreSQL, "uuid" deja que la base de datos genere el id de cada tabla.
-      database: { generateId: "uuid" },
+      database: { generateId: "uuid", joins: true },
       // Sin esta cabecera Better Auth lee `X-Forwarded-For`, que sin proxy es falsificable y, con una cadena de proxies,
       // no permite resolver la IP: todos los clientes compartirían el contador de intentos.
       ...(auth.CLIENT_IP_HEADER && { ipAddress: { ipAddressHeaders: [auth.CLIENT_IP_HEADER] } }),

@@ -127,6 +127,11 @@ devuelve un cuerpo declara su esquema con `@ResponseSchema`; una ruta sin esquem
   (`http://localhost:5173` por defecto). El plugin `openAPI`, que publica `/v1/auth/reference`, solo se registra cuando
   la documentación está activa (`openApiConfig.enabled`). `hooks` y `databaseHooks` van vacíos: el paquete los necesita
   para registrar los hooks de las clases con `@Hook()` y `@DatabaseHook()`.
+- El adaptador usa `transaction: true`, de modo que las operaciones de Better Auth que escriben varias filas, como el
+  registro, se ejecutan en una transacción: si falla la inserción de la cuenta, no queda un usuario sin cuenta.
+  `advanced.database.joins: true` reduce las consultas de la sesión (una menos en cada petición protegida) y exige las
+  relaciones de Drizzle de `schema/auth.ts` (`userRelations`, `sessionRelations` y `accountRelations`), que se pasan al
+  adaptador con el resto del schema.
 - `auth.ts` fija el `basePath` en `${apiBasePath}/auth`. La variable de entorno con la URL base no debe incluir una
   ruta, porque tendría prioridad; el esquema de entorno lo comprueba.
 - Las reglas de la cuenta (nombre, correo y contraseña) viven en `packages/contracts/src/auth.ts` y las usan el
