@@ -29,17 +29,17 @@ describe("AllExceptionsFilter", () => {
   it("usa el código y el mensaje públicos que indica la excepción", () => {
     const { response, body } = catchWith(
       new NotFoundException({
-        code: "TASK_NOT_FOUND",
-        message: "Task not found",
+        code: "USER_NOT_FOUND",
+        message: "User not found",
       })
     )
 
     expect(response.status).toHaveBeenCalledWith(404)
     expect(body()).toEqual({
-      message: "Task not found",
+      message: "User not found",
       error: "Not Found",
       statusCode: 404,
-      code: "TASK_NOT_FOUND",
+      code: "USER_NOT_FOUND",
       requestId: "req-1",
     })
   })

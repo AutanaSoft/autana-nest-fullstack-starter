@@ -2,6 +2,7 @@ import type { NestExpressApplication } from "@nestjs/platform-express"
 import { errorResponseSchema } from "@autana/contracts/errors"
 
 import { createTestApp } from "../support/test-app.js"
+import { ProtectedWriteController } from "../support/protected-write.controller.js"
 import { createClient } from "../support/test-client.js"
 
 // Comprueba que la aplicación conecta, con NODE_ENV=production, lo que en desarrollo no se activa o cambia. La CSRF, CORS
@@ -13,6 +14,7 @@ describe("la aplicación con NODE_ENV=production", () => {
   async function start(trustProxy = false, extraEnv: Record<string, string> = {}) {
     app = await createTestApp({
       env: { NODE_ENV: "production", TRUST_PROXY: String(trustProxy), ...extraEnv },
+      controllers: [ProtectedWriteController],
     })
     client = createClient(app)
   }
@@ -25,16 +27,16 @@ describe("la aplicación con NODE_ENV=production", () => {
   it("añade una CSP que no permite cargar nada", async () => {
     await start()
 
-    const response = await client.request("/health")
+    const response = await client.request("/health/live")
 
     expect(response.headers["content-security-policy"]).toBe("default-src 'none';frame-ancestors 'none'")
   })
 
   it("limita las peticiones y responde 429 con el contrato de error", async () => {
     await start()
-    for (let i = 0; i < 100; i++) expect((await client.request("/health")).status).toBe(200)
+    for (let i = 0; i < 100; i++) expect((await client.request("/health/live")).status).toBe(200)
 
-    const response = await client.request("/health")
+    const response = await client.request("/health/live")
 
     expect(response.status).toBe(429)
     expect(response.headers["retry-after"]).toBe("60")
@@ -46,25 +48,25 @@ describe("la aplicación con NODE_ENV=production", () => {
 
   it("limita antes de comprobar la sesión: una ruta protegida sin sesión responde 429, no 401", async () => {
     await start()
-    for (let i = 0; i < 100; i++) expect((await client.request("/tasks")).status).toBe(401)
+    for (let i = 0; i < 100; i++) expect((await client.request("/health")).status).toBe(401)
 
-    expect((await client.request("/tasks")).status).toBe(429)
+    expect((await client.request("/health")).status).toBe(429)
   })
 
   it("aplica un límite más estricto a las escrituras", async () => {
     await start()
-    const write = () => client.request("/tasks", { method: "POST", body: {} })
+    const write = () => client.request("/test/protected", { method: "POST", body: {} })
 
     for (let i = 0; i < 20; i++) expect((await write()).status).not.toBe(429)
 
     expect((await write()).status).toBe(429)
-    expect((await client.request("/health")).status).toBe(200)
+    expect((await client.request("/health/live")).status).toBe(200)
   })
 
   describe("dirección del cliente", () => {
     // La dirección no se exporta: se comprueba a través de quién comparte contador.
     const get = (forwardedFor: string) =>
-      client.request("/health", {
+      client.request("/health/live", {
         headers: { "X-Forwarded-For": forwardedFor },
       })
 
@@ -84,7 +86,7 @@ describe("la aplicación con NODE_ENV=production", () => {
     it("con CLIENT_IP_HEADER cuenta por la IP de esa cabecera e ignora X-Forwarded-For", async () => {
       await start(true, { CLIENT_IP_HEADER: "CF-Connecting-IP" })
       const getAs = (clientIp: string, forwardedFor: string) =>
-        client.request("/health", { headers: { "CF-Connecting-IP": clientIp, "X-Forwarded-For": forwardedFor } })
+        client.request("/health/live", { headers: { "CF-Connecting-IP": clientIp, "X-Forwarded-For": forwardedFor } })
       for (let i = 0; i < 100; i++) expect((await getAs("3.3.3.3", `1.1.1.${i}, 9.9.9.9`)).status).toBe(200)
 
       expect((await getAs("3.3.3.3", "2.2.2.2, 8.8.8.8")).status).toBe(429)
@@ -93,9 +95,9 @@ describe("la aplicación con NODE_ENV=production", () => {
 
     it("con CLIENT_IP_HEADER y sin esa cabecera en la petición, cuenta por la IP de la conexión", async () => {
       await start(false, { CLIENT_IP_HEADER: "CF-Connecting-IP" })
-      for (let i = 0; i < 100; i++) expect((await client.request("/health")).status).toBe(200)
+      for (let i = 0; i < 100; i++) expect((await client.request("/health/live")).status).toBe(200)
 
-      expect((await client.request("/health")).status).toBe(429)
+      expect((await client.request("/health/live")).status).toBe(429)
     })
 
     it("sin proxy de confianza ignora X-Forwarded-For", async () => {

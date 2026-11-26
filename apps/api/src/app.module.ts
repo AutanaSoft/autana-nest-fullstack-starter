@@ -10,8 +10,6 @@ import { validateEnv } from "./config/env.validation.js"
 import { DatabaseModule } from "./database/database.module.js"
 import { AuthModule } from "./modules/auth/auth.module.js"
 import { HealthModule } from "./modules/health/health.module.js"
-import { ProfileModule } from "./modules/profile/profile.module.js"
-import { TasksModule } from "./modules/tasks/tasks.module.js"
 
 @Module({
   imports: [
@@ -27,8 +25,6 @@ import { TasksModule } from "./modules/tasks/tasks.module.js"
     DatabaseModule,
     AuthModule,
     HealthModule,
-    ProfileModule,
-    TasksModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

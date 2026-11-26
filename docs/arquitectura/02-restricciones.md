@@ -40,6 +40,7 @@
 | `@nestjs/config`                           | ^12.1.1  | Configuración y validación de las variables de entorno |
 | `@nestjs/drizzle`                          | ^0.0.2   | Integración de Drizzle con Nest                        |
 | `@nestjs/throttler`                        | ^6.8.0   | Límite de peticiones por IP                            |
+| `@nestjs/terminus`                         | ^12.2.0  | Comprobaciones de salud (liveness, readiness, detalle) |
 | `@nestjs/swagger`                          | ^12.1.2  | Generación del documento OpenAPI                       |
 | `@scalar/nestjs-api-reference`             | ^1.2.41  | Interfaz interactiva de la documentación (Scalar)      |
 | `compression`                              | ^1.8.2   | Compresión gzip de las respuestas                      |

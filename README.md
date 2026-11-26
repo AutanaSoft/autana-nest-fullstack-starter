@@ -26,8 +26,9 @@ Un monorepo listo para clonar y ampliar, con lo mínimo para que un proyecto nue
 - **API** con NestJS y validación con Zod, con documentación OpenAPI interactiva en `/v1/docs` en desarrollo.
 - **Contratos compartidos**: los esquemas Zod se definen una vez y los usan la API y el frontend.
 - **Web** con React, React Router, TanStack Query y componentes de shadcn/ui sobre Tailwind CSS 4, con un panel privado.
-- **Funcionalidades de ejemplo** (`tasks` y `profile`), de punta a punta, para probar la plantilla al levantar un
-  proyecto nuevo. Se retiran con la [guía correspondiente](./docs/guias/general/retirar-funcionalidades-de-ejemplo.md).
+- **Salud de la API** con `@nestjs/terminus`: comprobaciones públicas de liveness y readiness, y un detalle con sesión.
+- **Páginas de ejemplo** (estado y cuenta) que solo usan la base, para probar la plantilla al levantar un proyecto
+  nuevo. Se sustituyen con la [guía correspondiente](./docs/guias/general/sustituir-paginas-de-ejemplo.md).
 - **Base de datos** PostgreSQL con Drizzle ORM, migraciones y un comando para reiniciarla en desarrollo.
 - **Pruebas** con Vitest: unitarias y de integración en la API, estas últimas contra una base PostgreSQL real, y
   unitarias y de componentes en el frontend.
@@ -40,7 +41,7 @@ Un monorepo listo para clonar y ampliar, con lo mínimo para que un proyecto nue
 | ----------------- | --------------------------------------------------------- |
 | Monorepo          | npm workspaces, Turborepo, TypeScript                     |
 | Frontend          | React, Vite, React Router, shadcn/ui, Tailwind CSS        |
-| Backend           | NestJS, Better Auth, Zod, OpenAPI                         |
+| Backend           | NestJS, Better Auth, Zod, OpenAPI, Terminus               |
 | Base de datos     | PostgreSQL, Drizzle ORM                                   |
 | Pruebas y calidad | Vitest, Oxlint, Prettier, markdownlint, Husky, commitlint |
 
@@ -86,7 +87,7 @@ detalles están en la [guía de configuración](./docs/guias/general/configuraci
 - [Regenerar y comparar el esquema de Better Auth](./docs/guias/backend/esquema-better-auth.md)
 - [Crear una funcionalidad en el frontend](./docs/guias/frontend/nueva-funcionalidad/README.md)
 - [Añadir componentes de shadcn/ui](./docs/guias/frontend/componentes-shadcn.md)
-- [Retirar las funcionalidades de ejemplo](./docs/guias/general/retirar-funcionalidades-de-ejemplo.md)
+- [Sustituir las páginas de ejemplo](./docs/guias/general/sustituir-paginas-de-ejemplo.md)
 - [Requisitos del producto (PRD)](./docs/prd/README.md): cómo documentar un producto, con un ejemplo.
 - [Planes de implementación](./docs/plans/README.md): cómo planificar un cambio, con un ejemplo.
 

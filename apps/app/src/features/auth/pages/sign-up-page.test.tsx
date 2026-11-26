@@ -17,7 +17,7 @@ async function renderPage() {
   const router = createMemoryRouter(
     [
       { path: "/auth", Component: AuthLayout, children: [{ path: "sign-up", Component: SignUpPage }] },
-      { path: "/tasks", element: <p>Panel</p> },
+      { path: "/", element: <p>Panel</p> },
     ],
     { initialEntries: ["/auth/sign-up"] }
   )
@@ -33,7 +33,7 @@ async function fillAndSubmit(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("SignUpPage", () => {
-  it("al crear la cuenta, la sesión nueva lleva a /tasks", async () => {
+  it("al crear la cuenta, la sesión nueva lleva a /", async () => {
     let signedUp = false
     const { router, user } = await renderPage()
     server.use(
@@ -47,7 +47,7 @@ describe("SignUpPage", () => {
     await fillAndSubmit(user)
 
     expect(await screen.findByText("Panel")).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe("/tasks")
+    expect(router.state.location.pathname).toBe("/")
   })
 
   it("con un correo ya registrado muestra el mensaje genérico y no navega", async () => {

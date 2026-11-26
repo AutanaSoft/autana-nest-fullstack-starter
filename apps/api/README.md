@@ -6,7 +6,7 @@ en [`docs/arquitectura/`](../../docs/arquitectura/README.md).
 
 ## Estructura
 
-Cada funcionalidad es un módulo en `src/modules/`: `auth`, `health`, `profile` y `tasks`. Lo transversal está en
+Cada funcionalidad es un módulo en `src/modules/`: `auth` y `health` forman la base. Lo transversal está en
 `src/common/` (filtro de errores, middlewares, validación y el módulo del límite de peticiones) y la configuración de la
 aplicación en `src/app.setup.ts`.
 

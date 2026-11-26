@@ -11,7 +11,7 @@ async function requestStatuses(nodeEnv: string | undefined) {
   try {
     const client = createClient(app)
     const docs = await Promise.all(docsPaths.map(async (path) => (await client.request(path)).status))
-    const health = (await client.request("/health")).status
+    const health = (await client.request("/health/live")).status
     return { docs, health }
   } finally {
     await app.close()
@@ -50,37 +50,56 @@ describe("documentación de la API", () => {
 
     afterAll(() => app.close())
 
-    it("describe las rutas de tareas y perfil, sin la ruta comodín de autenticación", () => {
-      expect(Object.keys(document.paths[`${apiBasePath}/tasks`]).toSorted()).toEqual(["get", "post"])
-      expect(Object.keys(document.paths[`${apiBasePath}/tasks/{taskId}`]).toSorted()).toEqual([
-        "delete",
-        "get",
-        "patch",
+    it("describe las rutas de salud, sin la ruta comodín de autenticación", () => {
+      expect(Object.keys(document.paths).toSorted()).toEqual([
+        `${apiBasePath}/health`,
+        `${apiBasePath}/health/live`,
+        `${apiBasePath}/health/ready`,
       ])
-      expect(Object.keys(document.paths[`${apiBasePath}/profile`]).toSorted()).toEqual(["get", "put"])
-      expect(Object.keys(document.paths).some((path) => path.includes("/auth"))).toBe(false)
     })
 
-    it("publica los esquemas del contrato y los referencia en las operaciones", () => {
+    // Solo se publican los esquemas que alguna operación referencia.
+    it("publica los esquemas del contrato", () => {
       expect(Object.keys(document.components.schemas).toSorted()).toEqual([
-        "CreateTask",
         "ErrorResponse",
+        "HealthIndicator",
         "HealthResponse",
-        "ListTasksResponse",
-        "Profile",
-        "Task",
-        "UpdateProfile",
-        "UpdateTask",
       ])
-      const create = document.paths[`${apiBasePath}/tasks`].post as {
-        requestBody: { content: Record<string, { schema: unknown }> }
-        responses: Record<string, { content: Record<string, { schema: unknown }> }>
+    })
+
+    it("describe las rutas de salud con la respuesta 200 y la 503 del contrato", () => {
+      const healthResponse = { $ref: "#/components/schemas/HealthResponse" }
+      for (const path of ["/health/live", "/health/ready", "/health"]) {
+        const get = document.paths[`${apiBasePath}${path}`].get as {
+          responses: Record<string, { content: Record<string, { schema: unknown }> }>
+        }
+        expect(get.responses["200"].content["application/json"].schema).toEqual(healthResponse)
       }
-      expect(create.requestBody.content["application/json"].schema).toEqual({
-        $ref: "#/components/schemas/CreateTask",
+      for (const path of ["/health/ready", "/health"]) {
+        const get = document.paths[`${apiBasePath}${path}`].get as {
+          responses: Record<string, { content: Record<string, { schema: unknown }> }>
+        }
+        expect(get.responses["503"].content["application/json"].schema).toEqual(healthResponse)
+      }
+    })
+
+    it("documenta el 401 de la ruta de salud que exige sesión, y solo de esa", () => {
+      const responses = (path: string) =>
+        (
+          document.paths[`${apiBasePath}${path}`].get as {
+            responses: Record<string, { content?: Record<string, { schema: unknown }> }>
+          }
+        ).responses
+      expect(responses("/health")["401"].content?.["application/json"].schema).toEqual({
+        $ref: "#/components/schemas/ErrorResponse",
       })
-      expect(create.responses["201"].content["application/json"].schema).toEqual({
-        $ref: "#/components/schemas/Task",
+      expect(responses("/health/live")["401"]).toBeUndefined()
+      expect(responses("/health/ready")["401"]).toBeUndefined()
+    })
+
+    it("documenta el tiempo de respuesta de cada indicador", () => {
+      expect(document.components.schemas.HealthIndicator).toMatchObject({
+        properties: { responseTime: { type: "number" } },
       })
     })
   })

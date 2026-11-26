@@ -9,15 +9,15 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@autana/ui/components/sidebar"
-import { ListIcon, UserIcon, CommandIcon } from "lucide-react"
+import { ActivityIcon, CircleUserRoundIcon, CommandIcon } from "lucide-react"
 
 import { NavMain } from "./nav-main"
 import { NavUser } from "./nav-user"
 
 // Las entradas del menú: al añadir una funcionalidad protegida se añade su enlace aquí.
 const navMain = [
-  { title: "Tareas", url: "/tasks", icon: <ListIcon /> },
-  { title: "Perfil", url: "/profile", icon: <UserIcon /> },
+  { title: "Estado", url: "/", icon: <ActivityIcon /> },
+  { title: "Cuenta", url: "/account", icon: <CircleUserRoundIcon /> },
 ]
 
 export function AppSidebar({
@@ -29,7 +29,7 @@ export function AppSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton className="data-[slot=sidebar-menu-button]:p-1.5!" render={<Link to="/tasks" />}>
+            <SidebarMenuButton className="data-[slot=sidebar-menu-button]:p-1.5!" render={<Link to="/" />}>
               <CommandIcon className="size-5!" />
               <span className="text-base font-semibold">Autana</span>
             </SidebarMenuButton>

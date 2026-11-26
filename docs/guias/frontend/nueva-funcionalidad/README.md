@@ -8,7 +8,8 @@ En los ejemplos, `productListSchema`, `productSchema`, `Product` y `CreateProduc
 `@autana/contracts/products`, y los componentes de interfaz, de `@autana/ui/components/<componente>`. Los ejemplos de
 `routes.tsx` y `app/router.tsx` omiten los imports de layouts, páginas y rutas para centrarse en la estructura.
 
-La implementación de referencia incluida en la plantilla es `apps/app/src/features/tasks/`.
+Las páginas de ejemplo de la plantilla, `apps/app/src/features/status/` y `apps/app/src/features/account/`, aplican esta
+estructura con una consulta y un formulario.
 
 ## Pasos
 

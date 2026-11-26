@@ -40,12 +40,12 @@ El árbol de rutas se compone así:
 
 ```text
 RootLayout (ErrorBoundary: ErrorPage, HydrateFallback: LoadingPage)
-├── (index)                          redirige a la primera pantalla privada
 ├── <funcionalidad pública>          layout propio, sin guarda de sesión (auth)
 │   ├── (index)  página principal
 │   └── <ruta>   otras páginas
 ├── PanelLayout                      guarda de sesión, barra lateral y cabecera
-│   └── <funcionalidad privada>      sus páginas, sin layout propio (tasks, profile)
+│   ├── (index)                      página de inicio del panel en `/` (status)
+│   └── <funcionalidad privada>      sus páginas, sin layout propio (account)
 └── *                                NotFoundPage
 ```
 

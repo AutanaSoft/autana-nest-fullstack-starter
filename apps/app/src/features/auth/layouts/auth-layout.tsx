@@ -5,7 +5,7 @@ import { authClient } from "@/lib/auth-client"
 export function AuthLayout() {
   const session = authClient.useSession()
 
-  if (session.data) return <Navigate to="/tasks" replace />
+  if (session.data) return <Navigate to="/" replace />
 
   return (
     <div className="flex min-h-svh items-center justify-center bg-muted p-6">

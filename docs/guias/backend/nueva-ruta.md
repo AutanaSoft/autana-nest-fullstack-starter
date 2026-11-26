@@ -1,8 +1,7 @@
 # Definir una ruta en el backend
 
 Ejemplo genérico de una operación con `<resource>` y `<action>`, que ilustra las reglas de
-[Conceptos transversales](../../arquitectura/08-conceptos-transversales.md). La implementación de referencia incluida en
-la plantilla es `apps/api/src/modules/tasks/`.
+[Conceptos transversales](../../arquitectura/08-conceptos-transversales.md).
 
 ## Controlador
 

@@ -73,7 +73,10 @@ apps/api/
 - `src/modules/<name>/` contiene un módulo de Nest por funcionalidad. `src/modules/auth/` registra la integración con
   Better Auth (`auth.module.ts`), su configuración (`auth.ts`) y el hook que valida el usuario
   (`user-validation.hook.ts`); se describe en
-  [Autenticación y autorización](./08-conceptos-transversales.md#autenticación-y-autorización).
+  [Autenticación y autorización](./08-conceptos-transversales.md#autenticación-y-autorización). `src/modules/health/`
+  expone las comprobaciones de salud con `@nestjs/terminus` y su indicador propio de la base de datos (`indicators/`);
+  se describe en [Salud de la API](./08-conceptos-transversales.md#salud-de-la-api). Son los dos únicos módulos de la
+  base.
 - `test/<name>/` contiene las pruebas de integración de cada módulo, y `test/support/`, lo que comparten (la aplicación
   de prueba, el cliente y la preparación de la base). Las pruebas unitarias viven junto al archivo que prueban
   (`<archivo>.spec.ts`). Los niveles están en [Pruebas](./08-conceptos-transversales.md#pruebas).
@@ -91,7 +94,7 @@ apps/api/
 
 `<name>.module.ts` y `<name>.controller.ts` están siempre en la raíz del módulo. El resto de las piezas se agrupa por
 tipo de Nest, con los mismos nombres de carpeta que en `common/`. Una carpeta se crea cuando existe su primera pieza: un
-módulo que solo tiene módulo y controlador, como `health`, no lleva ninguna.
+módulo que solo tiene módulo y controlador no lleva ninguna.
 
 - `<name>.module.ts` declara el controlador, los servicios y los repositorios, y registra los middlewares del módulo con
   `configure(consumer)`.
@@ -104,13 +107,15 @@ módulo que solo tiene módulo y controlador, como `health`, no lleva ninguna.
 - `mappers/to-<entity>.ts` adapta una fila de la base de datos al tipo del contrato
   ([Serialización](./08-conceptos-transversales.md#serialización-de-respuestas-con-zod)).
 - `guards/`, `decorators/`, `middleware/`, `pipes/` y `filters/` contienen las piezas de Nest que solo usa el módulo.
+- `indicators/<name>.health.ts` contiene un indicador de salud de Terminus propio, como el de la base de datos en
+  `health`.
 
-| Elemento           | Convención                             | Ejemplo                  |
-| ------------------ | -------------------------------------- | ------------------------ |
-| Carpeta del módulo | minúsculas, nombre del recurso         | `tasks`                  |
-| Archivo            | `<name>.<tipo>.ts` en kebab-case       | `tasks.controller.ts`    |
-| Servicio adicional | `services/<name>-<concern>.service.ts` | `tasks-stats.service.ts` |
-| Mapper             | `mappers/to-<entity>.ts`               | `mappers/to-task.ts`     |
+| Elemento           | Convención                             | Ejemplo                     |
+| ------------------ | -------------------------------------- | --------------------------- |
+| Carpeta del módulo | minúsculas, nombre del recurso         | `products`                  |
+| Archivo            | `<name>.<tipo>.ts` en kebab-case       | `products.controller.ts`    |
+| Servicio adicional | `services/<name>-<concern>.service.ts` | `products-stats.service.ts` |
+| Mapper             | `mappers/to-<entity>.ts`               | `mappers/to-product.ts`     |
 
 ### Estructura de `packages/contracts`
 
@@ -255,6 +260,8 @@ Estas reglas se comprueban en la revisión de código, no con lint ([Riesgos](./
 
 ### Ejemplo de una funcionalidad
 
-Consulta la guía [Crear una funcionalidad en el frontend](../guias/frontend/nueva-funcionalidad/README.md). La plantilla
-incluye `tasks` y `profile` como funcionalidades de ejemplo, que se retiran según
-[Retirar las funcionalidades de ejemplo](../guias/general/retirar-funcionalidades-de-ejemplo.md).
+Consulta la guía [Crear una funcionalidad en el frontend](../guias/frontend/nueva-funcionalidad/README.md). La base del
+frontend es `auth` y `panel`. La plantilla incluye además dos páginas de ejemplo sin tablas ni endpoints propios:
+`status`, la página de inicio del panel, que muestra la salud de la API, y `account`, con los datos de la sesión y el
+cambio de nombre. Se sustituyen según
+[Sustituir las páginas de ejemplo](../guias/general/sustituir-paginas-de-ejemplo.md).
