@@ -53,7 +53,7 @@ describe("plugin admin: rol y baneo", () => {
   it("un administrador banea: se rechaza el inicio de sesión y se revocan las sesiones", async () => {
     const admin = await signUpAdmin()
     const target = await client.signUp(emailPrefix)
-    expect((await client.request("/tasks", { cookie: target.cookie })).status).toBe(200)
+    expect((await client.request("/health", { cookie: target.cookie })).status).toBe(200)
 
     const ban = await adminCall("/ban-user", admin.cookie, { userId: target.id, banReason: "Spam" })
     const attempt = await signIn(target.email)
@@ -63,7 +63,7 @@ describe("plugin admin: rol y baneo", () => {
     expect(attempt.status).toBe(403)
     expect(attempt.body.code).toBe("BANNED_USER")
     expect(attempt.headers["set-cookie"]).toBeUndefined()
-    expect((await client.request("/tasks", { cookie: target.cookie })).status).toBe(401)
+    expect((await client.request("/health", { cookie: target.cookie })).status).toBe(401)
   })
 
   it("al levantar el baneo el usuario vuelve a iniciar sesión", async () => {

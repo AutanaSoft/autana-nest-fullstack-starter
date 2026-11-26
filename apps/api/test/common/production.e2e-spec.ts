@@ -2,6 +2,7 @@ import type { NestExpressApplication } from "@nestjs/platform-express"
 import { errorResponseSchema } from "@autana/contracts/errors"
 
 import { createTestApp } from "../support/test-app.js"
+import { ProtectedWriteController } from "../support/protected-write.controller.js"
 import { createClient } from "../support/test-client.js"
 
 // Comprueba que la aplicación conecta, con NODE_ENV=production, lo que en desarrollo no se activa o cambia. La CSRF, CORS
@@ -13,6 +14,7 @@ describe("la aplicación con NODE_ENV=production", () => {
   async function start(trustProxy = false, extraEnv: Record<string, string> = {}) {
     app = await createTestApp({
       env: { NODE_ENV: "production", TRUST_PROXY: String(trustProxy), ...extraEnv },
+      controllers: [ProtectedWriteController],
     })
     client = createClient(app)
   }
@@ -46,14 +48,14 @@ describe("la aplicación con NODE_ENV=production", () => {
 
   it("limita antes de comprobar la sesión: una ruta protegida sin sesión responde 429, no 401", async () => {
     await start()
-    for (let i = 0; i < 100; i++) expect((await client.request("/tasks")).status).toBe(401)
+    for (let i = 0; i < 100; i++) expect((await client.request("/health")).status).toBe(401)
 
-    expect((await client.request("/tasks")).status).toBe(429)
+    expect((await client.request("/health")).status).toBe(429)
   })
 
   it("aplica un límite más estricto a las escrituras", async () => {
     await start()
-    const write = () => client.request("/tasks", { method: "POST", body: {} })
+    const write = () => client.request("/test/protected", { method: "POST", body: {} })
 
     for (let i = 0; i < 20; i++) expect((await write()).status).not.toBe(429)
 

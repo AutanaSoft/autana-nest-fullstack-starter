@@ -48,15 +48,15 @@ Marca cada tarea al completarla. Una fase se da por cerrada cuando cumple sus cr
 
 ### Fase 2. Retirar `tasks` y `profile` (API, contratos y base de datos)
 
-- [ ] 2.1 Borrar `apps/api/src/modules/tasks/` y `apps/api/src/modules/profile/`, y quitarlos de `app.module.ts`.
-- [ ] 2.2 Quitar sus esquemas de `openapi-schemas.ts`.
-- [ ] 2.3 Borrar `test/tasks/`, `test/profile/` y `test/database/app-schema.e2e-spec.ts`, y ajustar
+- [x] 2.1 Borrar `apps/api/src/modules/tasks/` y `apps/api/src/modules/profile/`, y quitarlos de `app.module.ts`.
+- [x] 2.2 Quitar sus esquemas de `openapi-schemas.ts`.
+- [x] 2.3 Borrar `test/tasks/`, `test/profile/` y `test/database/app-schema.e2e-spec.ts`, y ajustar
       `test/common/docs.e2e-spec.ts`.
-- [ ] 2.4 Cambiar la ruta protegida de `/tasks` a `/health` en `test/auth/session.e2e-spec.ts`,
+- [x] 2.4 Cambiar la ruta protegida de `/tasks` a `/health` en `test/auth/session.e2e-spec.ts`,
       `test/auth/admin.e2e-spec.ts`, `test/common/production.e2e-spec.ts` y `test/common/middleware.e2e-spec.ts`.
-- [ ] 2.5 Borrar `packages/contracts/src/tasks.ts`, `profile.ts` y sus pruebas.
-- [ ] 2.6 Borrar `packages/database/src/schema/task.ts` y `profile.ts`, y actualizar `client.ts`.
-- [ ] 2.7 Regenerar la migración `0000_db_init` con `db:generate` y reiniciar la base local.
+- [x] 2.5 Borrar `packages/contracts/src/tasks.ts`, `profile.ts` y sus pruebas.
+- [x] 2.6 Borrar `packages/database/src/schema/task.ts` y `profile.ts`, y actualizar `client.ts`.
+- [x] 2.7 Regenerar la migración `0000_db_init` con `db:generate` y reiniciar la base local.
 
 **Criterios de aceptación**
 

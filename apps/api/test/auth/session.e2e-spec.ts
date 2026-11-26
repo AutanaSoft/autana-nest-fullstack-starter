@@ -61,7 +61,7 @@ describe("sesión", () => {
   describe("cierre de sesión", () => {
     it("invalida la cookie: las rutas protegidas dejan de responder y la sesión desaparece", async () => {
       const { id, cookie } = await client.signUp(emailPrefix)
-      expect((await client.request("/tasks", { cookie })).status).toBe(200)
+      expect((await client.request("/health", { cookie })).status).toBe(200)
 
       const signOut = await client.request("/auth/sign-out", {
         method: "POST",
@@ -70,7 +70,7 @@ describe("sesión", () => {
       })
 
       expect(signOut.status).toBe(200)
-      expect((await client.request("/tasks", { cookie })).status).toBe(401)
+      expect((await client.request("/health", { cookie })).status).toBe(401)
       expect(JSON.parse((await client.request("/auth/get-session", { cookie })).text)).toBeNull()
       expect(await client.db.select().from(session).where(eq(session.userId, id))).toHaveLength(0)
     })
@@ -89,22 +89,22 @@ describe("sesión", () => {
         body: {},
       })
 
-      expect((await client.request("/tasks", { cookie })).status).toBe(401)
-      expect((await client.request("/tasks", { cookie: otherCookie })).status).toBe(200)
+      expect((await client.request("/health", { cookie })).status).toBe(401)
+      expect((await client.request("/health", { cookie: otherCookie })).status).toBe(200)
     })
   })
 
   describe("expiración de la sesión", () => {
     it("una sesión caducada responde 401 en las rutas protegidas y no se devuelve como sesión", async () => {
       const { id, cookie } = await client.signUp(emailPrefix)
-      expect((await client.request("/tasks", { cookie })).status).toBe(200)
+      expect((await client.request("/health", { cookie })).status).toBe(200)
 
       await client.db
         .update(session)
         .set({ expiresAt: new Date(Date.now() - 60_000) })
         .where(eq(session.userId, id))
 
-      const protectedRoute = await client.request("/tasks", { cookie })
+      const protectedRoute = await client.request("/health", { cookie })
       expect(protectedRoute.status).toBe(401)
       expect(errorResponseSchema.parse(protectedRoute.body).code).toBe("SESSION_REQUIRED")
       expect(JSON.parse((await client.request("/auth/get-session", { cookie })).text)).toBeNull()

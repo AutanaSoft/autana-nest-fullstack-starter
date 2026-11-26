@@ -6,6 +6,7 @@ import supertest from "supertest"
 
 import { AllowAnonymous } from "@thallesp/nestjs-better-auth"
 import { createTestApp } from "../support/test-app.js"
+import { ProtectedWriteController } from "../support/protected-write.controller.js"
 import { createClient, webOrigin } from "../support/test-client.js"
 
 // Ruta de prueba con una respuesta lo bastante grande para que se comprima.
@@ -23,7 +24,7 @@ describe("middleware", () => {
   let client: ReturnType<typeof createClient>
 
   beforeAll(async () => {
-    app = await createTestApp({ controllers: [LargeResponseController] })
+    app = await createTestApp({ controllers: [LargeResponseController, ProtectedWriteController] })
     client = createClient(app)
   })
 
@@ -86,7 +87,7 @@ describe("middleware", () => {
 
   describe("protección CSRF", () => {
     it("rechaza una petición que cambia estado desde otro origen, también en las rutas de autenticación", async () => {
-      for (const path of ["/tasks", "/auth/sign-in/email"]) {
+      for (const path of ["/test/protected", "/auth/sign-in/email"]) {
         const response = await client.request(path, {
           method: "POST",
           body: {},
@@ -102,7 +103,7 @@ describe("middleware", () => {
 
     it("rechaza un formulario de otro origen", async () => {
       const response = await client
-        .request("/tasks", {
+        .request("/test/protected", {
           method: "POST",
           headers: { Origin: "https://evil.example" },
         })
@@ -114,7 +115,7 @@ describe("middleware", () => {
 
     it("rechaza una petición de otro sitio según Sec-Fetch-Site, aunque no envíe Origin", async () => {
       const response = await supertest(app.getHttpServer())
-        .post(`${apiBasePath}/tasks`)
+        .post(`${apiBasePath}/test/protected`)
         .set("Sec-Fetch-Site", "cross-site")
         .send({})
 
@@ -122,7 +123,7 @@ describe("middleware", () => {
     })
 
     it("acepta una petición del origen del frontend", async () => {
-      const response = await client.request("/tasks", {
+      const response = await client.request("/test/protected", {
         method: "POST",
         body: {},
       })
