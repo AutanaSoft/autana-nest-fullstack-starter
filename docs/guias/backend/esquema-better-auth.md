@@ -1,9 +1,9 @@
 # Regenerar y comparar el esquema de Better Auth
 
 `packages/database/src/schema/auth.ts` lo genera la CLI de Better Auth y lleva dos personalizaciones, descritas en
-[Base de datos](../../arquitectura/08-conceptos-transversales.md#base-de-datos). Esta guía explica cómo regenerarlo en
-un archivo temporal y compararlo con el actual, por ejemplo al añadir un plugin o al actualizar Better Auth. La
-comparación solo debe mostrar esas dos personalizaciones y los cambios nuevos que haya que incorporar.
+[Datos](../../arquitectura/08-conceptos-transversales.md#datos). Esta guía explica cómo regenerarlo en un archivo
+temporal y compararlo con el actual, por ejemplo al añadir un plugin o al actualizar Better Auth. La comparación solo
+debe mostrar esas dos personalizaciones y los cambios nuevos que haya que incorporar.
 
 ## Regenerar en un archivo temporal
 
