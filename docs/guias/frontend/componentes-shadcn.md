@@ -1,12 +1,12 @@
 # Añadir componentes de shadcn/ui
 
-Ejecuta el CLI desde la raíz apuntando a la aplicación. Los archivos se instalan en `packages/ui`:
+Ejemplo que aplica
+[Estilos y sistema de diseño](../../arquitectura/08-conceptos-transversales.md#estilos-y-sistema-de-diseño). Ejecuta el
+CLI desde la raíz apuntando a la aplicación:
 
 ```bash
 npx shadcn@latest add button -c apps/app
 ```
-
-Si el CLI pregunta por sobrescribir un archivo existente, revisa la diferencia antes de aceptar.
 
 ```tsx
 import { Button } from "@autana/ui/components/button"

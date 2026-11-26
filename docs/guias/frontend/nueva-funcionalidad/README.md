@@ -1,10 +1,11 @@
 # Crear una funcionalidad en el frontend
 
-Ejemplo de una funcionalidad completa, que ilustra la estructura y las reglas de
-[Vista de bloques de construcción](../../../arquitectura/05-vista-de-bloques.md).
+Ejemplo de una funcionalidad completa, que aplica la estructura de
+[Vista de bloques de construcción](../../../arquitectura/05-vista-de-bloques.md#frontend) y las reglas de
+[Conceptos transversales](../../../arquitectura/08-conceptos-transversales.md#frontend).
 
 En los ejemplos, `productListSchema`, `productSchema`, `Product` y `CreateProductInput` provienen de
-`@<scope>/contracts/products`, y los componentes de interfaz, de `@<scope>/ui/components/<componente>`. Los ejemplos de
+`@autana/contracts/products`, y los componentes de interfaz, de `@autana/ui/components/<componente>`. Los ejemplos de
 `routes.tsx` y `app/router.tsx` omiten los imports de layouts, páginas y rutas para centrarse en la estructura.
 
 La implementación de referencia incluida en la plantilla es `apps/app/src/features/tasks/`.

@@ -6,9 +6,6 @@ la plantilla es `apps/api/src/modules/tasks/`.
 
 ## Controlador
 
-El controlador solo traduce HTTP: valida la entrada con los esquemas del contrato, llama al servicio y declara el
-esquema de la respuesta.
-
 ```ts
 // modules/<resource>/<resource>.controller.ts
 @ApiTags("<resource>")
@@ -47,9 +44,6 @@ export class <Resource>Controller {
 
 ## Servicio
 
-El servicio contiene las consultas y las reglas. Lanza excepciones de Nest con el código público de la operación y
-devuelve el valor en el tipo del contrato; la serialización la hace el interceptor.
-
 ```ts
 // modules/<resource>/services/<resource>.service.ts
 @Injectable()
@@ -64,7 +58,7 @@ export class <Resource>Service {
       .limit(1)
     if (!resource) throw new NotFoundException({ code: "RESOURCE_NOT_FOUND", message: "Resource not found" })
 
-    // El WHERE repite el propietario y el estado para resolver las operaciones concurrentes.
+    // Actualiza solo si la fila sigue siendo del usuario y conserva el estado leído.
     const [updated] = await this.db
       .update(resources)
       .set({ /* cambios */ })
@@ -79,9 +73,7 @@ export class <Resource>Service {
 
 ## Montar el módulo
 
-El módulo declara el controlador y el servicio. Si las respuestas del módulo no deben guardarse, registra `noStore` con
-`configure`: los middlewares del módulo se ejecutan antes que el guard de sesión, por lo que también alcanza a su `401`.
-Toda ruta exige sesión salvo que se marque con `@AllowAnonymous()`.
+El módulo declara el controlador y el servicio, y registra `noStore` si sus respuestas no deben guardarse.
 
 ```ts
 // modules/<resource>/<resource>.module.ts
@@ -93,4 +85,4 @@ export class <Resource>Module implements NestModule {
 }
 ```
 
-Después se añade a `imports` de `AppModule` (`src/app.module.ts`). Los imports relativos terminan en `.js`.
+Después se añade a `imports` de `AppModule` (`src/app.module.ts`).

@@ -48,9 +48,8 @@ referencias por las de tu primera funcionalidad:
 
 ## Regenerar la migración
 
-El esquema de `task` y `profile` está en la migración `0000_db_init`. Mientras no haya datos que preservar, regénerala
-siguiendo [Comandos](./comandos.md): borra `packages/database/migrations/`, ejecuta `db:generate` con `--name db_init`,
-reinicia tu base con `npm run db:reset` y elimina la base de pruebas `<base>_test`.
+El esquema de `task` y `profile` está en la migración `0000_db_init`. Regénerala como indica `db:generate` en
+[Comandos](./comandos.md).
 
 ## Comprobación
 

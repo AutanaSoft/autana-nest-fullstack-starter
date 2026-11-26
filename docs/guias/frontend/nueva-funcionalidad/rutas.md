@@ -2,8 +2,8 @@
 
 [Visión general](./README.md) · Siguiente: [Peticiones](./peticiones.md)
 
-Una pantalla privada no lleva layout propio: `features/panel` aplica la guarda de sesión, la barra lateral y la
-cabecera. La ruta declara su título en `handle`, que la cabecera lee, y carga la página con `lazy`.
+La ruta de una pantalla privada declara su título y carga la página de forma diferida. `app/router.tsx` la monta bajo el
+panel.
 
 ```tsx
 // features/products/routes.tsx

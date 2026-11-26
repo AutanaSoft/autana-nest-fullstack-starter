@@ -79,7 +79,7 @@ detalles están en la [guía de configuración](./docs/guias/general/configuraci
 - [Arquitectura](./docs/arquitectura/README.md): decisiones, estructura y reglas del código.
 - [Configuración](./docs/guias/general/configuracion.md): variables de entorno y bases de datos.
 - [Comandos](./docs/guias/general/comandos.md): scripts del monorepo y comprobaciones previas al envío de cambios.
-- [Crear una ruta en el backend](./docs/guias/backend/nueva-ruta.md)
+- [Definir una ruta en el backend](./docs/guias/backend/nueva-ruta.md)
 - [Definir una configuración en el backend](./docs/guias/backend/nueva-configuracion.md)
 - [Dividir un servicio por responsabilidad](./docs/guias/backend/nuevo-servicio.md)
 - [Escribir una prueba en el backend](./docs/guias/backend/nueva-prueba.md)

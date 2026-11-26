@@ -2,13 +2,10 @@
 
 Anterior: [Esquema y formulario](./esquema-y-formulario.md) · [Visión general](./README.md)
 
-Los niveles y su criterio están en [Pruebas](../../../arquitectura/08-conceptos-transversales.md#pruebas). Cada prueba
-vive junto al archivo que prueba. Las peticiones HTTP se simulan con MSW: cada prueba declara con `server.use(...)` las
-respuestas que necesita, y una petición sin respuesta declarada hace fallar la prueba.
+Ejemplos que aplican [Pruebas](../../../arquitectura/08-conceptos-transversales.md#pruebas). Cada prueba declara con
+`server.use(...)` las respuestas de MSW que necesita.
 
 ## Unitaria de `api/`
-
-Prueba la función con la petición simulada y comprueba la respuesta y los errores.
 
 ```ts
 // features/products/api/create-product.test.ts
@@ -48,8 +45,7 @@ describe("createProduct", () => {
 
 ## De componente
 
-Renderiza el componente y comprueba lo que ve y hace la persona usuaria, no su implementación interna. Busca los
-elementos por su rol o su etiqueta.
+Busca los elementos por su rol o su etiqueta.
 
 ```tsx
 // features/products/components/forms/create-product-form.test.tsx
@@ -86,48 +82,54 @@ describe("CreateProductForm", () => {
 })
 ```
 
-## Con sesión
+## De página
 
-Un layout o una página que lee la sesión, como `PanelLayout`, depende de un estado global al módulo del cliente de
-autenticación. Declara la sesión con `mockSession` antes de renderizar, para que la prueba no herede el estado de la
-anterior:
+`renderWithProviders` monta la página con un router en memoria y un cliente de consultas sin reintentos.
 
 ```tsx
-// features/products/layouts/products-layout.test.tsx
-import { render, screen } from "@testing-library/react"
-import { createMemoryRouter, RouterProvider } from "react-router"
+// features/products/pages/products-page.test.tsx
+import { screen, waitFor } from "@testing-library/react"
+import { http, HttpResponse } from "msw"
 import { describe, expect, it } from "vitest"
 
-import { mockSession } from "@/test/mock-session"
+import { renderWithProviders } from "@/test/render-with-providers"
+import { server } from "@/test/server"
 
-import { ProductsLayout } from "./products-layout"
+import { ProductsPage } from "./products-page"
 
-function renderLayout() {
-  const router = createMemoryRouter(
-    [
-      { path: "/products", element: <ProductsLayout />, children: [{ index: true, element: <p>Contenido</p> }] },
-      { path: "/auth", element: <p>Acceso</p> },
-    ],
-    { initialEntries: ["/products"] }
-  )
-  render(<RouterProvider router={router} />)
-}
+describe("ProductsPage", () => {
+  it("muestra los productos", async () => {
+    server.use(
+      http.get("*/v1/products", () =>
+        HttpResponse.json({ items: [{ id: "1", name: "Café", description: "Tostado medio" }], total: 1 })
+      )
+    )
 
-describe("ProductsLayout", () => {
-  it("redirige a la pantalla de acceso cuando no hay sesión", async () => {
-    await mockSession(null)
+    renderWithProviders(<ProductsPage />)
 
-    renderLayout()
-
-    expect(await screen.findByText("Acceso")).toBeInTheDocument()
+    expect(await screen.findByText("Café")).toBeInTheDocument()
   })
 
-  it("muestra el contenido cuando hay sesión", async () => {
-    await mockSession({ user: { id: "1", name: "Ana Ruiz" }, session: { id: "s1" } })
+  it("lee el filtro de la URL", async () => {
+    let status: string | null = null
+    server.use(
+      http.get("*/v1/products", ({ request }) => {
+        status = new URL(request.url).searchParams.get("status")
+        return HttpResponse.json({ items: [], total: 0 })
+      })
+    )
 
-    renderLayout()
+    renderWithProviders(<ProductsPage />, { route: "/?status=archived" })
 
-    expect(await screen.findByText("Contenido")).toBeInTheDocument()
+    await waitFor(() => expect(status).toBe("archived"))
+  })
+
+  it("muestra un error cuando no se pueden cargar", async () => {
+    server.use(http.get("*/v1/products", () => HttpResponse.json({}, { status: 500 })))
+
+    renderWithProviders(<ProductsPage />)
+
+    expect(await screen.findByText("No pudimos cargar los productos. Inténtalo de nuevo.")).toBeInTheDocument()
   })
 })
 ```

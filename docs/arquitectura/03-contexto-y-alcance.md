@@ -22,7 +22,7 @@ packages/
   comparten únicamente el paquete de contratos.
 - `packages/contracts` publica los esquemas de peticiones y respuestas que consume el frontend, y el prefijo de la API
   (`apiBasePath`, `/v1`). El paquete no depende del backend. Cada módulo exporta su archivo con el patrón
-  `packages/contracts/src/<name>.ts` y se importa como `@<scope>/contracts/<name>`.
+  `packages/contracts/src/<name>.ts` y se importa como `@autana/contracts/<name>`.
 - Los esquemas que el frontend no consume, y que comparten varias rutas de un módulo, viven en el propio módulo
   (`modules/<name>/`).
 - Cómo consume el backend los paquetes del monorepo, que se distribuyen sin compilar, está en
@@ -44,7 +44,7 @@ disponible.
 ### Relación con el monorepo
 
 - Los componentes base de shadcn/ui viven en un paquete de interfaz compartido del monorepo, no en la aplicación. La
-  aplicación los importa por su ruta de paquete (`@<scope>/ui/components/<componente>`).
+  aplicación los importa por su ruta de paquete (`@autana/ui/components/<componente>`).
 - El CLI de shadcn se ejecuta desde la aplicación. Su `components.json` apunta los alias de componentes, utilidades y
   estilos al paquete de interfaz, por lo que los archivos generados se instalan allí y no en la aplicación.
 - El paquete de interfaz contiene únicamente los componentes base de shadcn/ui, sin conocimiento del dominio ni de la
@@ -53,7 +53,7 @@ disponible.
   - los que pertenecen a una funcionalidad, en `features/<name>/components/`;
   - los reutilizables entre funcionalidades, en `components/common/`.
 - Los contratos de la API (esquemas y tipos de petición y respuesta) se importan del paquete de contratos
-  (`@<scope>/contracts/<name>`). El frontend no los redefine.
+  (`@autana/contracts/<name>`). El frontend no los redefine.
 - El prefijo de la API y otras constantes que comparten backend y frontend también salen de paquetes del monorepo.
 - La aplicación no importa código de otra aplicación del monorepo. Lo que dos aplicaciones necesitan se mueve a un
   paquete.

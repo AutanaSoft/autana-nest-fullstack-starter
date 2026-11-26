@@ -17,15 +17,15 @@ export const createProductSchema = z.object({
 
 ```tsx
 // features/products/components/forms/create-product-form.tsx
-import type { CreateProductInput } from "@<scope>/contracts/products"
+import type { CreateProductInput } from "@autana/contracts/products"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useId } from "react"
 import { useForm } from "react-hook-form"
-import { Alert, AlertDescription } from "@<scope>/ui/components/alert"
-import { Button } from "@<scope>/ui/components/button"
-import { Field, FieldError, FieldGroup, FieldLabel } from "@<scope>/ui/components/field"
-import { Input } from "@<scope>/ui/components/input"
-import { Textarea } from "@<scope>/ui/components/textarea"
+import { Alert, AlertDescription } from "@autana/ui/components/alert"
+import { Button } from "@autana/ui/components/button"
+import { Field, FieldError, FieldGroup, FieldLabel } from "@autana/ui/components/field"
+import { Input } from "@autana/ui/components/input"
+import { Textarea } from "@autana/ui/components/textarea"
 import { createProductSchema } from "../../schemas/create-product-schema"
 
 type CreateProductFormProps = {

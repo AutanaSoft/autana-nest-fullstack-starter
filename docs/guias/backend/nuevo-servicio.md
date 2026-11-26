@@ -1,18 +1,8 @@
 # Dividir un servicio por responsabilidad
 
-Ejemplo genérico de cómo repartir la lógica de un módulo en servicios con una sola responsabilidad. Aplica la regla de
-[Responsabilidad de los servicios](../../arquitectura/08-conceptos-transversales.md#responsabilidad-de-los-servicios).
-El ejemplo usa `<resource>` y `<related>` para dos conceptos de dominio distintos.
-
-## Cuándo dividir
-
-Divide un servicio cuando:
-
-- su nombre contiene "y", como `<Resource>And<Related>Service`;
-- inyecta dependencias que solo usa una parte de sus métodos;
-- sus pruebas necesitan muchos dobles.
-
-Si la lógica es sencilla y pertenece a un solo concepto, déjala en su servicio.
+Ejemplo genérico que aplica
+[Responsabilidad de los servicios](../../arquitectura/08-conceptos-transversales.md#responsabilidad-de-los-servicios),
+con `<resource>` y `<related>` para dos conceptos de dominio distintos.
 
 ## Antes: un servicio con varias responsabilidades
 
@@ -38,8 +28,6 @@ export class <Resource>And<Related>Service {
 ```
 
 ## Después: un servicio por concepto
-
-Cada servicio se ocupa de un concepto y no conoce a los demás.
 
 ```ts
 // modules/<related>/services/<related>.service.ts
@@ -68,8 +56,6 @@ export class <Related>StatsService {
 
 ## Coordinar un caso de uso en el controlador
 
-El controlador llama a cada servicio en orden. No toma decisiones de negocio: las reglas siguen en los servicios.
-
 ```ts
 // modules/<related>/<related>.controller.ts
 @Controller("<related>")
@@ -94,12 +80,5 @@ export class <Related>Controller {
 }
 ```
 
-- Las consultas se quedan en el servicio. Extrae una a un repositorio (`repositories/<related>.repository.ts`) solo
-  cuando sea compleja o la reutilicen varios servicios. Ese repositorio recibe el cliente con `@InjectDrizzle()` y no
-  participa en una transacción abierta con `tx`, salvo que la propagues con `AsyncLocalStorage`. Consulta la
-  [decisión](../../arquitectura/09-decisiones.md).
-- Los módulos no se importan entre sí. Un servicio que usan varios módulos sube a `common/`. Consulta las
-  [reglas de dependencia](../../arquitectura/05-vista-de-bloques.md#reglas-de-dependencia).
-- Registra todos los servicios del módulo en `providers` de `<related>.module.ts`.
-- Cada servicio se prueba por separado con pocos dobles. Consulta
-  [Escribir una prueba en el backend](./nueva-prueba.md).
+Registra los servicios en `providers` de `<related>.module.ts`. Las pruebas de cada servicio están en
+[Escribir una prueba en el backend](./nueva-prueba.md).

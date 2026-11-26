@@ -3,18 +3,14 @@
 Anterior: [Hooks](./hooks.md) · [Visión general](./README.md) · Siguiente:
 [Esquema y formulario](./esquema-y-formulario.md)
 
-Las pantallas privadas no tienen layout propio. El layout de `features/panel` (`PanelLayout`) las envuelve: comprueba la
-sesión y redirige a `/auth/sign-in` cuando no existe, y muestra la barra lateral y la cabecera con el título de la ruta.
-Si la comprobación falla por un error, no redirige, para no expulsar al usuario por un fallo de red. Crea un layout en
-la funcionalidad solo si añade estructura propia a sus páginas.
-
-La página conecta la ruta con los datos: llama a los hooks, define las acciones y compone los componentes.
+Una pantalla privada no lleva layout propio: la envuelve el del panel. La página llama a los hooks, define la acción de
+crear y compone los componentes.
 
 ```tsx
 // features/products/pages/products-page.tsx
-import type { CreateProductInput } from "@<scope>/contracts/products"
-import { Alert, AlertDescription } from "@<scope>/ui/components/alert"
-import { Skeleton } from "@<scope>/ui/components/skeleton"
+import type { CreateProductInput } from "@autana/contracts/products"
+import { Alert, AlertDescription } from "@autana/ui/components/alert"
+import { Skeleton } from "@autana/ui/components/skeleton"
 import { CreateProductDialog } from "../components/dialogs/create-product-dialog"
 import { ProductStatusTabs } from "../components/filters/product-status-tabs"
 import { ProductList } from "../components/lists/product-list"
