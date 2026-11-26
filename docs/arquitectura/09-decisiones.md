@@ -67,6 +67,9 @@ Cada entrada recoge una decisión, su motivo y la alternativa descartada. Los pr
 - **Esquema de autenticación generado con la CLI de Better Auth.** Al regenerarlo, las diferencias se limitan a las dos
   personalizaciones y a lo que cambie Better Auth. Descartados: un esquema escrito a mano, que oculta esos cambios, y la
   salida tal cual, que crea `timestamp` sin zona horaria.
+- **Salud con `@nestjs/terminus` y un indicador propio para Drizzle.** Es el paquete oficial y aporta los indicadores de
+  memoria y disco y el formato de respuesta; el indicador de la base de datos es una consulta mínima. Descartado: un
+  endpoint de salud propio, que duplicaría lo que Terminus ya resuelve.
 - **Compilación con SWC y comprobación de tipos aparte.** La CLI de Nest ya integra SWC. Descartado: empaquetar la API y
   los paquetes en un único archivo, que añadiría otra herramienta.
 
@@ -88,6 +91,11 @@ Cada entrada recoge una decisión, su motivo y la alternativa descartada. Los pr
   middlewares ni de los guards.
 - **Protección CSRF integrada de Nest, también en `/v1/auth/*`.** No necesita tokens ni cookies. Descartado: un esquema
   de tokens, que exigiría cookies adicionales y cambios en el cliente.
+- **Detalle de la salud solo con sesión.** El uso de memoria y disco describe la infraestructura, y el orquestador solo
+  necesita `live` y `ready`, que son públicas. Ser la única ruta propia de la base con sesión la convierte además en la
+  ruta protegida de las pruebas de integración. Descartado: un detalle público.
+- **El `503` de la salud conserva el formato de Terminus.** El cliente necesita saber qué indicador falla, y el contrato
+  de error solo tiene un código y un mensaje. Descartado: dejar que `AllExceptionsFilter` lo sustituya.
 - **Documentación solo con `NODE_ENV=development`.** Un despliegue al que le falte `NODE_ENV` no expone el contrato.
   Descartado: ocultarla solo con `NODE_ENV=production`, que falla abierta.
 - **Interfaz de la documentación con Scalar.** `@nestjs/swagger` genera el documento y `@scalar/nestjs-api-reference`

@@ -182,6 +182,25 @@ un proxy las guarden: el módulo registra el middleware `noStore` (`src/common/m
 `configure(consumer)`, y la librería de autenticación lo añade a las suyas. Los middlewares del módulo se ejecutan antes
 que el guard de sesión, por lo que `noStore` también alcanza al `401`.
 
+### Salud de la API
+
+`src/modules/health/` usa `@nestjs/terminus` y expone tres rutas, todas con `noStore`:
+
+| Ruta                   | Acceso     | Comprueba                                         |
+| ---------------------- | ---------- | ------------------------------------------------- |
+| `GET /v1/health/live`  | Público    | Nada: es el liveness del orquestador              |
+| `GET /v1/health/ready` | Público    | La base de datos: es el readiness del orquestador |
+| `GET /v1/health`       | Con sesión | Base de datos, memoria (heap y RSS) y disco       |
+
+- El detalle lo consume la página de estado del frontend, y las pruebas de integración lo usan como ruta protegida.
+- La respuesta sigue el formato de Terminus (`status`, `info`, `error` y `details`), descrito en el contrato
+  `packages/contracts/src/health.ts`. Con algún indicador caído responde `503` con ese mismo cuerpo, no con el contrato
+  de error: el controlador captura la excepción de Terminus antes de que llegue a `AllExceptionsFilter`.
+- Terminus no incluye un indicador para Drizzle. `indicators/database.health.ts` ejecuta `select 1` con un tiempo límite
+  de 1 s.
+- Los umbrales (512 MB de heap, 1 GB de RSS y el 90 % del disco en `/`) son constantes de `health.controller.ts`. Deben
+  ajustarse a los recursos del despliegue; en contenedores o en Windows, la ruta del disco puede ser otra.
+
 ### Datos
 
 - **Nombres de las bases.** `DATABASE_URL` es la única variable de conexión y apunta a la base de desarrollo, `<base>`.

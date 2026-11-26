@@ -159,7 +159,7 @@ afterEach(async () => {
 it("añade una CSP que no permite cargar nada", async () => {
   app = await createTestApp({ env: { NODE_ENV: "production" } })
 
-  const response = await createClient(app).request("/health")
+  const response = await createClient(app).request("/health/live")
 
   expect(response.headers["content-security-policy"]).toBe("default-src 'none';frame-ancestors 'none'")
 })

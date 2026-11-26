@@ -1,7 +1,8 @@
 # Plan: base mínima con estado y cuenta
 
-> Plan de la reducción del código de ejemplo de la plantilla. Sustituye las funcionalidades `tasks` y `profile` por una
-> página de estado de la API y una página de cuenta, de modo que la base solo conserve `auth`, `health` y `panel`.
+> Plan de la reducción del código de ejemplo de la plantilla. Parte del
+> [PRD de ejemplo](../prd/ejemplo-estado-y-cuenta.md). Sustituye las funcionalidades `tasks` y `profile` por una página
+> de estado de la API y una página de cuenta, de modo que la base solo conserve `auth`, `health` y `panel`.
 
 ## Objetivo
 
@@ -103,16 +104,16 @@ que dupliquen uno de shadcn.
 
 ### Fase 4. Documentación
 
-- [ ] 4.1 Reescribir `docs/guias/general/retirar-funcionalidades-de-ejemplo.md` como guía para sustituir las páginas de
+- [x] 4.1 Reescribir `docs/guias/general/retirar-funcionalidades-de-ejemplo.md` como guía para sustituir las páginas de
       ejemplo.
-- [ ] 4.2 Sustituir `docs/prd/ejemplo-tareas.md` por `docs/prd/ejemplo-estado-y-cuenta.md` y borrar
+- [x] 4.2 Sustituir `docs/prd/ejemplo-tareas.md` por `docs/prd/ejemplo-estado-y-cuenta.md` y borrar
       `docs/plans/ejemplo-tareas.md`; actualizar los `README.md` de `docs/prd/` y `docs/plans/`.
-- [ ] 4.3 Actualizar `docs/arquitectura/05-vista-de-bloques.md` y `06-vista-de-ejecucion.md`.
-- [ ] 4.4 Documentar la salud (liveness, readiness y detalle) en `08-conceptos-transversales.md` y las decisiones en
+- [x] 4.3 Actualizar `docs/arquitectura/05-vista-de-bloques.md` y `06-vista-de-ejecucion.md`.
+- [x] 4.4 Documentar la salud (liveness, readiness y detalle) en `08-conceptos-transversales.md` y las decisiones en
       `09-decisiones.md`.
-- [ ] 4.5 Actualizar `docs/guias/backend/nueva-ruta.md`, `docs/guias/frontend/nueva-funcionalidad/README.md` y
+- [x] 4.5 Actualizar `docs/guias/backend/nueva-ruta.md`, `docs/guias/frontend/nueva-funcionalidad/README.md` y
       `README.md`.
-- [ ] 4.6 Ejecutar Prettier y `markdownlint-cli2` sobre los archivos editados.
+- [x] 4.6 Ejecutar Prettier y `markdownlint-cli2` sobre los archivos editados.
 
 **Criterios de aceptación**
 
