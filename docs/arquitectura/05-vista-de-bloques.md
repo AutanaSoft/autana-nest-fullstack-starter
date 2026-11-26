@@ -55,9 +55,9 @@ apps/api/
 - `src/app.setup.ts` reúne la configuración que no es un módulo: los middlewares globales (identificador de la petición,
   registro, cabeceras de seguridad, CORS, compresión y CSRF), el prefijo global y la documentación OpenAPI. Está
   separado de `main.ts` para que las pruebas arranquen la misma aplicación.
-- `src/config/` tiene un archivo por dominio (`<name>.config.ts`) con el esquema de sus variables de entorno y su
-  configuración registrada con `registerAs`. `env.validation.ts` valida todas las variables a la vez al arrancar e
-  `index.ts` lista las configuraciones que carga `ConfigModule`.
+- `src/config/` tiene un archivo por dominio (`<name>.config.ts`), la validación del entorno (`env.validation.ts`) y la
+  lista de configuraciones que carga `ConfigModule` (`index.ts`). El patrón está en
+  [Configuración y entornos](./08-conceptos-transversales.md#configuración-y-entornos).
 - `src/database/` registra el cliente de Drizzle con `@nestjs/drizzle` (`database.module.ts`) y exporta el tipo que se
   inyecta (`database.ts`). Usa el paquete `database`.
 - `src/common/` contiene lo transversal que usan varios módulos. No tiene archivos sueltos: cada pieza vive en la
@@ -70,13 +70,13 @@ apps/api/
     a ninguna funcionalidad. No es `src/modules/`, que reúne los módulos de funcionalidad.
   - `openapi/`: el registro de los esquemas de OpenAPI.
   - `pipes/`: el pipe de validación del contrato.
-- `src/modules/<name>/` contiene un módulo de Nest por funcionalidad. `src/modules/auth/` registra `AuthModule` de
-  `@thallesp/nestjs-better-auth` (`auth.module.ts`), con la configuración de Better Auth (`auth.ts`) y el hook que
-  valida el usuario (`user-validation.hook.ts`). El guard de sesión global y los decoradores `@AllowAnonymous()` y
-  `@Session()` los aporta el paquete.
-- `test/<name>/` contiene las pruebas de integración de cada módulo, y `test/support/`, la preparación de la base de
-  pruebas. Las pruebas unitarias viven junto al archivo que prueban (`<archivo>.spec.ts`). Los niveles y su criterio
-  están en [Pruebas](./08-conceptos-transversales.md#pruebas).
+- `src/modules/<name>/` contiene un módulo de Nest por funcionalidad. `src/modules/auth/` registra la integración con
+  Better Auth (`auth.module.ts`), su configuración (`auth.ts`) y el hook que valida el usuario
+  (`user-validation.hook.ts`); se describe en
+  [Autenticación y autorización](./08-conceptos-transversales.md#autenticación-y-autorización).
+- `test/<name>/` contiene las pruebas de integración de cada módulo, y `test/support/`, lo que comparten (la aplicación
+  de prueba, el cliente y la preparación de la base). Las pruebas unitarias viven junto al archivo que prueban
+  (`<archivo>.spec.ts`). Los niveles están en [Pruebas](./08-conceptos-transversales.md#pruebas).
 
 #### Reglas de dependencia
 
@@ -86,7 +86,6 @@ apps/api/
 - Los módulos no se importan entre sí. La excepción es `auth`, que ofrece al resto el guard de sesión y sus decoradores.
   Lo que dos módulos necesitan en común sube a `common/` o, si lo consume el frontend, al paquete `contracts`.
 - Una pieza pasa de un módulo a la carpeta de su tipo en `common/` cuando la reutiliza otro módulo.
-- Los imports relativos terminan en `.js`: los paquetes de Nest son solo ESM y el proyecto también.
 
 #### Anatomía de un módulo
 
@@ -99,13 +98,12 @@ módulo que solo tiene módulo y controlador, como `health`, no lleva ninguna.
 - `<name>.controller.ts` solo se ocupa de HTTP: valida los parámetros con su esquema (`@Body({ schema })`, `@Param`,
   `@Query`), fija los códigos de estado, llama a los servicios y declara el esquema de la respuesta con
   `@ResponseSchema`.
-- `services/<name>.service.ts` contiene las reglas y las consultas de un concepto de dominio. Lanza excepciones de Nest
-  con el código público del error y no conoce HTTP.
+- `services/<name>.service.ts` contiene las reglas y las consultas de un concepto de dominio, sin conocer HTTP
+  ([Responsabilidad de los servicios](./08-conceptos-transversales.md#responsabilidad-de-los-servicios)).
 - `repositories/<name>.repository.ts` encapsula una consulta compleja o reutilizada por varios servicios.
-- `mappers/to-<entity>.ts` adapta una fila de la base de datos al tipo del contrato. Es una función tipada y no valida
-  en ejecución lo que recibe de una consulta de Drizzle, porque el tipo ya lo garantiza.
+- `mappers/to-<entity>.ts` adapta una fila de la base de datos al tipo del contrato
+  ([Serialización](./08-conceptos-transversales.md#serialización-de-respuestas-con-zod)).
 - `guards/`, `decorators/`, `middleware/`, `pipes/` y `filters/` contienen las piezas de Nest que solo usa el módulo.
-- Las pruebas unitarias van junto al archivo que prueban (`<archivo>.spec.ts`).
 
 | Elemento           | Convención                             | Ejemplo                  |
 | ------------------ | -------------------------------------- | ------------------------ |
@@ -113,34 +111,6 @@ módulo que solo tiene módulo y controlador, como `health`, no lleva ninguna.
 | Archivo            | `<name>.<tipo>.ts` en kebab-case       | `tasks.controller.ts`    |
 | Servicio adicional | `services/<name>-<concern>.service.ts` | `tasks-stats.service.ts` |
 | Mapper             | `mappers/to-<entity>.ts`               | `mappers/to-task.ts`     |
-
-`app.setup.ts` aplica el prefijo `apiBasePath` con `setGlobalPrefix`. El prefijo se aplica a la ruta HTTP y al contrato
-OpenAPI, y cada controlador declara sus rutas relativas a él (`@Controller('<name>')`).
-
-#### Responsabilidad de los servicios
-
-Cada servicio tiene una única responsabilidad: se ocupa de un concepto de dominio y cambia por una sola razón. Un
-servicio que mezcla varios conceptos (un "servicio de dios") crece sin control y obliga a las pruebas a simular muchas
-dependencias.
-
-- Un módulo puede tener varios servicios cuando sus responsabilidades son distintas, por ejemplo
-  `services/<name>.service.ts` y `services/<name>-stats.service.ts`.
-- Conviene dividir un servicio cuando su nombre contiene "y" (`UserAndOrderService`), cuando inyecta dependencias que
-  solo usa una parte de sus métodos o cuando sus pruebas necesitan muchos dobles.
-- Un caso de uso que coordina varios servicios, como cobrar, guardar y notificar un pedido, no se escribe dentro de
-  ninguno de ellos. El controlador llama a cada servicio en orden y no contiene reglas de negocio.
-- La lógica sencilla se queda en su servicio: no se fragmenta en servicios o funciones auxiliares sin necesidad.
-- Las consultas viven en el servicio, sin una capa de repositorio por defecto. Una consulta se extrae a un repositorio
-  del módulo (`repositories/<name>.repository.ts`) solo cuando es compleja o la reutilizan varios servicios.
-
-El ejemplo con código está en la guía [Dividir un servicio por responsabilidad](../guias/backend/nuevo-servicio.md).
-
-#### Inyección de dependencias
-
-Un servicio se inyecta por su clase. Se usa un token (`Symbol` con `@Inject()`) cuando el valor no es una clase, como el
-objeto de la librería de autenticación, o cuando hay varias implementaciones reales. Una clase abstracta sirve como
-contrato y token a la vez. Para sustituir un servicio en pruebas basta `useValue` o `overrideProvider`, sin crear una
-interfaz.
 
 ### Estructura de `packages/contracts`
 
@@ -159,11 +129,10 @@ packages/contracts/
 - `src/<name>.ts` contiene los esquemas Zod de peticiones y respuestas de un módulo, junto con los tipos que se infieren
   de ellos. Se importa como `@autana/contracts/<name>`.
 - `src/<name>.test.ts` prueba los esquemas de `<name>.ts` y vive junto a ellos.
-- El paquete se distribuye como fuente TypeScript, sin paso de compilación: `exports` apunta a `./src/*.ts`. `zod` es
-  una dependencia de pares para que el backend y el frontend compartan una sola instancia.
-- Quien lo consume resuelve la fuente de forma distinta. El backend la ejecuta Node.js directamente, quitando los tipos;
-  el compilador de la aplicación solo transforma `src/`. El frontend la resuelve con `paths` en `tsconfig.app.json` y
-  con el propio Vite.
+- El paquete se distribuye como fuente TypeScript, sin compilar: `exports` apunta a `./src/*.ts`. `zod` es una
+  dependencia de pares para que el backend y el frontend compartan una sola instancia.
+- El backend lo ejecuta con Node.js, que quita los tipos, por lo que los imports relativos entre sus archivos llevan la
+  extensión `.ts`. El frontend lo resuelve con `paths` en `tsconfig.app.json` y con Vite.
 
 ### Estructura de `packages/database`
 
@@ -190,11 +159,10 @@ packages/database/
 - `src/client.ts` exporta `createDatabase(url)`, que crea el pool de PostgreSQL y el cliente de Drizzle. El paquete no
   lee variables de entorno ni depende de la API: la URL llega por parámetro.
 - `src/migrate.ts` exporta `migrateDatabase(url)`, que aplica las migraciones pendientes a la base indicada.
-- `src/reset.ts` exporta `resetDatabase(url)`, que deja la base como recién creada, y `src/scripts/reset.ts` es el
-  comando que lo ejecuta con confirmación.
+- `src/reset.ts` exporta `resetDatabase(url)` y `src/scripts/reset.ts` es el comando que lo ejecuta con confirmación
+  ([Datos](./08-conceptos-transversales.md#datos)).
 - `drizzle.config.ts` configura Drizzle Kit y carga el `.env` del paquete, que solo define `DATABASE_URL`.
-- Se distribuye como fuente TypeScript, igual que `contracts`. Node.js la ejecuta quitando los tipos, por lo que los
-  imports relativos entre sus archivos llevan la extensión `.ts`.
+- Se distribuye como fuente TypeScript, igual que `contracts`.
 
 ## Frontend
 
@@ -253,13 +221,13 @@ Crea en cada funcionalidad solo las carpetas que use:
   las rutas de las funcionalidades privadas mediante `createPanelRoutes([...])`. Cada ruta declara su título en `handle`
   y la cabecera lo lee.
 - **`routes.tsx`:** exporta la ruta de la funcionalidad: su layout y las páginas hijas.
-- **`layouts/`:** estructura compartida por las páginas de la funcionalidad. No consulta datos. Las pantallas privadas
-  no llevan layout propio: se montan bajo el layout de `features/panel`, que aplica la guarda de sesión.
+- **`layouts/`:** estructura compartida por las páginas de la funcionalidad. Las pantallas privadas no llevan layout
+  propio: se montan bajo el de `features/panel`.
 - **`pages/`:** conectan la ruta con los datos. Llaman a los hooks, definen las acciones de negocio y componen los
   componentes de la página.
 - **`components/`:** piezas de interfaz de la funcionalidad. Pueden gestionar su estado local, como un formulario.
-- **`api/`:** funciones de TypeScript sin React. Cada archivo realiza una petición con el cliente HTTP, valida la
-  respuesta con el esquema del contrato e interpreta los errores propios de esa petición.
+- **`api/`:** cada archivo realiza una petición con el cliente HTTP, valida la respuesta con el esquema del contrato e
+  interpreta los errores propios de esa petición.
 - **`hooks/` de la feature:** envuelven las funciones de `api/` con la librería de consultas. Definen la clave de caché,
   la invalidación y las opciones. Un hook de filtros lee y escribe en la URL los filtros y la página.
 - **`schemas/`:** esquemas de validación propios de la funcionalidad, como los de sus formularios. Cada esquema vive en
@@ -282,14 +250,8 @@ Crea en cada funcionalidad solo las carpetas que use:
    importado.
 7. Los layouts no consultan los datos de una página. Esa responsabilidad corresponde a la página. El layout del panel sí
    comprueba la sesión para proteger las pantallas privadas.
-8. Si un componente existe en el registro de shadcn/ui, se instala con el CLI en lugar de escribirse a mano.
-9. `className` se usa para el layout. No se sobrescriben los colores, la tipografía ni los tamaños de un componente: se
-   usan sus variantes (`variant`, `size`).
-10. Los filtros y la página de una lista viven en la URL, no en el estado de un componente.
 
-> **Verificación.** Estas reglas se comprueban en la revisión de código. La configuración de lint de la plantilla no las
-> aplica automáticamente. Si se decide automatizarlas, debe añadirse una regla de restricción de imports por carpeta;
-> hasta entonces, el revisor es quien las hace cumplir.
+Estas reglas se comprueban en la revisión de código, no con lint ([Riesgos](./11-riesgos-y-deuda-tecnica.md#riesgos)).
 
 ### Ejemplo de una funcionalidad
 

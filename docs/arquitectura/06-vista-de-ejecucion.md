@@ -39,27 +39,22 @@ peticiones de Nest no las cuenta.
 El árbol de rutas se compone así:
 
 ```text
-RootLayout (ErrorBoundary: ErrorPage)
-├── <funcionalidad pública>          layout propio, sin guarda de sesión
+RootLayout (ErrorBoundary: ErrorPage, HydrateFallback: LoadingPage)
+├── (index)                          redirige a la primera pantalla privada
+├── <funcionalidad pública>          layout propio, sin guarda de sesión (auth)
 │   ├── (index)  página principal
 │   └── <ruta>   otras páginas
-├── <funcionalidad protegida>        layout propio con guarda de sesión
-│   ├── (index)  página principal
-│   └── <ruta>   otras páginas
+├── PanelLayout                      guarda de sesión, barra lateral y cabecera
+│   └── <funcionalidad privada>      sus páginas, sin layout propio (tasks, profile)
 └── *                                NotFoundPage
 ```
 
-- Cada `routes.tsx` exporta una ruta con su layout y sus páginas hijas. `app/router.tsx` solo las ensambla.
-- Un layout no declara rutas. Es la ruta padre y muestra la página activa con `<Outlet />`. Las páginas nuevas se añaden
-  como hijas de su layout.
-- La guarda de sesión vive en el layout de la funcionalidad protegida, no en `app/`. Redirige a la pantalla de acceso
-  cuando no hay sesión y muestra un estado de carga mientras la comprueba. Las funcionalidades públicas no la llevan.
-- El layout de cada funcionalidad aporta la cabecera de página y el contenedor del contenido.
-- Si varias funcionalidades comparten un mismo shell (por ejemplo, una barra lateral), este vive en `components/common/`
-  y recibe su navegación por props, porque lo compartido no conoce los destinos de cada funcionalidad.
-- El `ErrorBoundary` de `RootLayout` muestra `ErrorPage` ante un error inesperado. La ruta `*` muestra `NotFoundPage`.
-- Las páginas de una funcionalidad se cargan de forma diferida cuando su peso lo justifique. La carga diferida se
-  declara en `routes.tsx`.
+- Cada `routes.tsx` exporta la ruta de su funcionalidad. `app/router.tsx` las ensambla y monta las privadas bajo el
+  panel con `createPanelRoutes([...])`.
+- Un layout no declara rutas: es la ruta padre y muestra la página activa con `<Outlet />`.
+- `PanelLayout` redirige al acceso cuando no hay sesión y muestra un estado de carga mientras la comprueba. Su cabecera
+  muestra el título que cada ruta declara en `handle`.
+- El panel y las funcionalidades privadas se cargan de forma diferida, declarado con `lazy` en su `routes.tsx`.
 
 [React Router: rutas anidadas y `Outlet`](https://reactrouter.com/start/data/routing)
 

@@ -41,8 +41,9 @@ Cada entrada indica por qué se difiere y la condición que obliga a resolverla.
   - Mitigación: ninguna. No se han pedido.
 - **Se permiten contraseñas formadas solo por espacios,** porque la contraseña no se recorta ni se normaliza.
   - Mitigación: es una decisión consciente, porque recortarla la modificaría sin avisar al usuario.
-- **Las reglas de dependencia del frontend** se comprueban solo en revisión, sin una regla de lint, como indica la nota
-  de [Reglas de dependencia](./05-vista-de-bloques.md#reglas-de-dependencia-1).
+- **Las [reglas de dependencia del frontend](./05-vista-de-bloques.md#reglas-de-dependencia-1)** se comprueban solo en
+  revisión, sin una regla de lint.
+  - Mitigación: automatizarlas con una regla de restricción de imports por carpeta, si se decide.
 - **No hay [pruebas de extremo a extremo](./08-conceptos-transversales.md#pruebas-de-extremo-a-extremo).** Ninguna
   prueba recorre el frontend y la API juntas en un navegador real, así que no se comprueban la cookie de sesión entre
   recargas, las guardas de ruta ni el proxy de Vite.

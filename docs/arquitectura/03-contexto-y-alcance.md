@@ -9,10 +9,13 @@ que depende de paquetes internos (`packages/*`).
 
 ```text
 apps/
-├── api/          # Backend (este documento)
-└── app/          # Frontend
+├── api/              # Backend
+└── app/              # Frontend
 packages/
-└── contracts/    # Esquemas Zod compartidos
+├── contracts/        # Esquemas Zod compartidos
+├── database/         # Esquema, migraciones y cliente de la base de datos
+├── ui/               # Componentes base de shadcn/ui
+└── oxlint-config/    # Configuración compartida de Oxlint
 ```
 
 - Una aplicación solo depende de paquetes, nunca de otra aplicación. El backend y el frontend se comunican por HTTP y

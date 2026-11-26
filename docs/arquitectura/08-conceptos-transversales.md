@@ -5,63 +5,69 @@
 ### Compilación y desarrollo
 
 `apps/api` se compila con SWC mediante la CLI de Nest (`nest build`, con `builder: swc` en `nest-cli.json`) a `dist/`.
-SWC solo transforma el código: no comprueba tipos. `npm run typecheck` ejecuta `tsc --noEmit` y debe correrse aparte.
+SWC no comprueba tipos: `npm run typecheck` ejecuta `tsc --noEmit` aparte.
 
 - **Imports relativos.** El proyecto es ESM con `module: nodenext`, por lo que los imports relativos de la API terminan
   en `.js`.
-- **Paquetes del workspace.** `contracts` y `database` se distribuyen como fuente TypeScript y SWC no los compila:
-  Node.js los ejecuta quitando los tipos. Por eso los imports relativos entre sus archivos llevan la extensión `.ts`, y
-  `tsconfig.json` activa `rewriteRelativeImportExtensions` para que `tsc` los acepte.
-- **Desarrollo.** `npm run dev` ejecuta mediante Turborepo la tarea `dev` de `apps/api`, que lanza `nest start --watch`
-  con `NODE_ENV=development`: compila con SWC y reinicia Node cuando cambia el código. `NODE_ENV=development` es lo que
-  activa la documentación.
+- **Paquetes del workspace.** SWC no compila `contracts` ni `database`: Node.js ejecuta su fuente
+  ([Vista de bloques](./05-vista-de-bloques.md#estructura-de-packagescontracts)). `tsconfig.json` activa
+  `rewriteRelativeImportExtensions` para que `tsc` acepte sus imports con extensión `.ts`.
+- **Desarrollo.** `npm run dev` lanza, mediante Turborepo, `nest start --watch` en `apps/api` con
+  `NODE_ENV=development`, que es lo que activa la documentación.
 - **Producción.** `npm run build` genera `dist/` y `npm run start:prod` ejecuta `node dist/main`.
-- **Puerto.** `app.config.ts` lee `PORT` (3000 por defecto, y también si está vacío). Una variable definida en el
-  entorno prevalece sobre el `.env`.
+- **Puerto.** `app.config.ts` lee `PORT`, con `3000` si falta o está vacío.
+
+### Responsabilidad de los servicios
+
+Cada servicio se ocupa de un concepto de dominio y cambia por una sola razón. Un módulo puede tener varios, como
+`services/<name>.service.ts` y `services/<name>-stats.service.ts`.
+
+- Un caso de uso que coordina varios servicios lo ordena el controlador, que no contiene reglas de negocio.
+- La lógica sencilla se queda en su servicio, sin fragmentarla en servicios o funciones auxiliares.
+- Las consultas viven en el servicio. Se extraen a un repositorio del módulo solo cuando son complejas o las reutilizan
+  varios servicios.
+
+Los criterios para dividir un servicio y el ejemplo están en la guía
+[Dividir un servicio por responsabilidad](../guias/backend/nuevo-servicio.md).
+
+### Inyección de dependencias
+
+Un servicio se inyecta por su clase. Un token (`Symbol` con `@Inject()`) se usa solo cuando el valor no es una clase,
+como el objeto de la librería de autenticación, o cuando hay varias implementaciones reales; una clase abstracta sirve
+como contrato y token a la vez. En las pruebas, un servicio se sustituye con `useValue` u `overrideProvider`.
 
 ### Definición de un endpoint
 
-Cada funcionalidad es un módulo de Nest con un controlador y un servicio. El controlador solo se ocupa de HTTP y el
-servicio contiene las reglas y las consultas.
-
-- `@Controller('<name>')` fija la ruta relativa al prefijo `/v1`, y `@Get`, `@Post`, `@Put`, `@Patch` o `@Delete` el
-  método. Escribe los parámetros de ruta con dos puntos, como `:resourceId`; OpenAPI los publica con llaves.
-- Valida cada entrada con el esquema Zod del paquete `contracts`: `@Body({ schema })`, `@Query({ schema })` y
+- `@Controller('<name>')` fija la ruta relativa al prefijo `/v1`, que `app.setup.ts` aplica con `setGlobalPrefix`. Los
+  parámetros de ruta se escriben con dos puntos (`:resourceId`); OpenAPI los publica con llaves.
+- Cada entrada se valida con el esquema de `contracts`: `@Body({ schema })`, `@Query({ schema })` y
   `@Param('<name>', { schema })`. El controlador declara el error público de cada destino con
   `@UsePipes(new ContractValidationPipe({ ... }))`.
-- Declara el esquema de la respuesta correcta con `@ResponseSchema(schema, status)`. El mismo decorador activa la
-  serialización y publica el esquema en la documentación. Declara los demás estados con `@ApiBadRequestResponse`,
-  `@ApiUnauthorizedResponse` y similares, indicando `standardSchema: errorResponseSchema`.
-- Un `DELETE` sin cuerpo responde `204` con `@HttpCode(204)`.
-- Si todas las rutas del módulo exigen que no se guarde la respuesta, el módulo registra el middleware `noStore` en
-  `configure(consumer)`. Las rutas exigen sesión salvo que se marquen con `@AllowAnonymous()`.
+- `@ResponseSchema(schema, status)` declara la respuesta correcta: activa la serialización y publica el esquema. Los
+  demás estados se declaran con `@ApiBadRequestResponse` y similares, con `standardSchema: errorResponseSchema`. Un
+  `DELETE` sin cuerpo responde `204`.
+- Las rutas exigen sesión salvo que se marquen con `@AllowAnonymous()`. El controlador recibe la sesión con `@Session()`
+  y pasa `session.user.id` al servicio.
 
-El controlador recibe la sesión con `@Session() session: UserSession` y pasa `session.user.id` al servicio. En el
-servicio:
+El servicio:
 
-1. Consulta con Drizzle y autoriza. Limita siempre el acceso a la cuenta autenticada y lanza `NotFoundException` cuando
-   un recurso es ajeno, para no revelar qué identificadores existen.
-2. Ejecuta la acción. En una mutación, incluye el propietario y la precondición de estado en el `WHERE`. Si una
-   operación concurrente impide que se modifique la fila, lanza `ConflictException` (`409`) con un código propio de la
-   operación.
-3. Devuelve el valor en el tipo del contrato. No serializa: lo hace el interceptor.
+1. Limita toda consulta a la cuenta autenticada y lanza `NotFoundException` cuando un recurso es ajeno, para no revelar
+   qué identificadores existen.
+2. En una mutación, incluye el propietario y la precondición de estado en el `WHERE`. Si una operación concurrente
+   impide modificar la fila, lanza `ConflictException` (`409`) con un código propio.
+3. Comprueba las reglas que relacionan varios campos de la petición, con el error público de la operación.
+4. Devuelve el valor en el tipo del contrato, sin serializarlo.
 
-Las reglas que relacionan varios campos de una petición se comprueban en el servicio y responden con el error público de
-la operación.
-
-#### Ejemplo genérico
-
-Consulta la guía [Definir una ruta en el backend](../guias/backend/nueva-ruta.md).
+El ejemplo está en la guía [Definir una ruta en el backend](../guias/backend/nueva-ruta.md).
 
 ### Validación y errores
 
 `ContractValidationPipe` convierte un fallo de validación en el error público de la operación según el destino que falló
-(`param`, `query` o `body`). El pipe estándar no informa del destino, por lo que cada controlador declara los códigos de
-su módulo.
+(`param`, `query` o `body`), que el pipe estándar no informa.
 
 `AllExceptionsFilter` es el único manejador de errores de las rutas de Nest y responde siempre con el cuerpo de
-`errorResponseSchema` (`packages/contracts/src/errors.ts`). Las rutas de `/v1/auth/*` no pasan por él: sus errores
-tienen la forma nativa de Better Auth, como explica [Autenticación y autorización](#autenticación-y-autorización).
+`errorResponseSchema` (`packages/contracts/src/errors.ts`). Las rutas de `/v1/auth/*` no pasan por él
+([Ciclo de una petición](./06-vista-de-ejecucion.md#ciclo-de-una-petición)).
 
 ```json
 {
@@ -75,8 +81,7 @@ tienen la forma nativa de Better Auth, como explica [Autenticación y autorizaci
 
 - `code` es el identificador estable. El cliente decide qué mostrar según él, nunca según `message`.
 - `message` está en inglés y es un texto fijo por `code`: nunca contiene el detalle de una excepción.
-- `error` y `statusCode` salen siempre del estado HTTP, porque `createErrorResponse`
-  (`src/common/errors/error-response.ts`) los deriva de él.
+- `error` y `statusCode` salen del estado HTTP (`createErrorResponse`, en `src/common/errors/error-response.ts`).
 - `requestId` es el de la cabecera `X-Request-Id`, para que el usuario pueda indicarlo al reportar un fallo.
 
 | Origen                                    | Estado  | Código                                           |
@@ -87,177 +92,134 @@ tienen la forma nativa de Better Auth, como explica [Autenticación y autorizaci
 | Ruta inexistente bajo `/v1/`              | `404`   | `NOT_FOUND`                                      |
 | Ruta inexistente fuera de `/v1/`          | `404`   | Página HTML por defecto de Express               |
 
-- Un error inesperado se registra con su detalle y el `requestId`, y la respuesta no lo expone.
+- Un error inesperado se registra con su detalle y el `requestId`; la respuesta no lo expone.
 - Los códigos fijos por estado son `BAD_REQUEST` (`400`), `NOT_FOUND` (`404`), `UNSUPPORTED_MEDIA_TYPE` (`415`),
-  `RATE_LIMITED` (`429`) y `HTTP_ERROR` para el resto.
-- Un JSON malformado responde `400 BAD_REQUEST`.
-- El límite de peticiones añade `Retry-After: 60` a su `429`.
-- En los servicios, lanza una excepción de Nest con el código público de la operación, por ejemplo
-  `new NotFoundException({ code: 'TASK_NOT_FOUND', message: 'Task not found' })`. El filtro la traduce al contrato.
+  `RATE_LIMITED` (`429`) y `HTTP_ERROR` para el resto. Un JSON malformado responde `400 BAD_REQUEST`, y el `429` del
+  límite de peticiones añade `Retry-After: 60`.
 
 ### Serialización de respuestas con Zod
 
-`StandardSchemaSerializerInterceptor` es global (`APP_INTERCEPTOR`). Valida y filtra con el esquema del contrato todas
-las respuestas correctas, porque es la capa que impide que un dato interno o sensible llegue al cliente. Cada ruta que
-devuelve un cuerpo declara su esquema con `@ResponseSchema`; una ruta sin esquema se devuelve tal cual.
+`StandardSchemaSerializerInterceptor` es global (`APP_INTERCEPTOR`) y valida y filtra cada respuesta correcta con el
+esquema que declara `@ResponseSchema`, para que ningún dato interno llegue al cliente. Una ruta sin esquema se devuelve
+tal cual.
 
-- Declara los campos públicos con `z.object()` en cada nivel: el interceptor descarta las propiedades que el esquema no
-  declara, como el propietario de una fila.
-- Si el cuerpo no cumple el esquema, el interceptor lanza un error y el filtro responde `500 INTERNAL_ERROR` sin exponer
-  el detalle.
-- No uses `z.strictObject()` ni `.passthrough()` en los esquemas de respuesta. El primero convierte un campo adicional
-  en un `500` y el segundo lo deja pasar.
-- Los mappers de un módulo (`mappers/`) solo adaptan los tipos que el esquema no convierte, como las fechas de la base
-  de datos. No filtran campos.
-- Un mapper es una función tipada y no valida en ejecución lo que recibe de una consulta de Drizzle, porque el tipo ya
-  lo garantiza. Solo valida con un esquema Zod cuando la entrada es externa o no tiene forma fija, como la respuesta de
-  otro servicio o una columna `jsonb`. El esquema vive en `mappers/` junto al mapper y no forma parte del contrato.
-- Las rutas de la librería de autenticación no pasan por el interceptor: Better Auth las atiende como middleware.
+- Los campos públicos se declaran con `z.object()` en cada nivel: el interceptor descarta los que el esquema no declara,
+  como el propietario de una fila. No se usan `z.strictObject()`, que convierte un campo adicional en un `500`, ni
+  `.passthrough()`, que lo deja pasar.
+- Si el cuerpo no cumple el esquema, el filtro responde `500 INTERNAL_ERROR` sin exponer el detalle.
+- Los mappers (`mappers/`) solo adaptan los tipos que el esquema no convierte, como las fechas, y no filtran campos. Son
+  funciones tipadas que no validan una fila de Drizzle. Solo usan un esquema Zod, en `mappers/` y fuera del contrato,
+  cuando la entrada es externa o no tiene forma fija, como la respuesta de otro servicio o una columna `jsonb`.
 
 ### Autenticación y autorización
 
-- La integración usa `@thallesp/nestjs-better-auth`. `AuthModule.forRootAsync`, registrado en
-  `modules/auth/auth.module.ts`, monta Better Auth como un middleware de Express en `/v1/auth/*`, con sus propios
-  contratos y códigos de error, y excluye esa ruta del prefijo global. No definas rutas de autenticación propias ni
-  controladores que las reenvíen.
-- `auth.ts` crea la instancia de Better Auth con la configuración validada. Usa `@better-auth/drizzle-adapter` con
-  `advanced.database.generateId: "uuid"`, que con PostgreSQL delega la generación del id en la base de datos. Habilita
-  el acceso con correo y contraseña (de 8 a 64 caracteres) y acepta peticiones del origen de la variable `WEB_ORIGIN`
-  (`http://localhost:5173` por defecto). El plugin `openAPI`, que publica `/v1/auth/reference`, solo se registra cuando
-  la documentación está activa (`openApiConfig.enabled`). `hooks` y `databaseHooks` van vacíos: el paquete los necesita
-  para registrar los hooks de las clases con `@Hook()` y `@DatabaseHook()`.
-- El adaptador usa `transaction: true`, de modo que las operaciones de Better Auth que escriben varias filas, como el
-  registro, se ejecutan en una transacción: si falla la inserción de la cuenta, no queda un usuario sin cuenta.
-  `advanced.database.joins: true` reduce las consultas de la sesión (una menos en cada petición protegida) y exige las
-  relaciones de Drizzle de `schema/auth.ts` (`userRelations`, `sessionRelations` y `accountRelations`), que se pasan al
-  adaptador con el resto del schema.
-- `auth.ts` fija el `basePath` en `${apiBasePath}/auth`. La variable de entorno con la URL base no debe incluir una
-  ruta, porque tendría prioridad; el esquema de entorno lo comprueba.
+- La integración usa `@thallesp/nestjs-better-auth`. `AuthModule.forRootAsync` (`modules/auth/auth.module.ts`) monta
+  Better Auth como middleware de Express en `/v1/auth/*` y excluye esa ruta del prefijo global. No se definen rutas de
+  autenticación propias ni controladores que las reenvíen.
+- `auth.ts` crea la instancia con la configuración validada:
+  - `@better-auth/drizzle-adapter` con `advanced.database.generateId: "uuid"`, que delega el id en PostgreSQL.
+  - `transaction: true`, para que las escrituras de varias filas, como el registro, sean atómicas.
+  - `advanced.database.joins: true`, que ahorra una consulta en cada petición protegida y exige las relaciones de
+    `schema/auth.ts` (`userRelations`, `sessionRelations` y `accountRelations`).
+  - Correo y contraseña (de 8 a 64 caracteres) y peticiones del origen `WEB_ORIGIN`.
+  - `basePath` en `${apiBasePath}/auth`. La URL base del entorno no debe incluir una ruta, porque tendría prioridad; el
+    esquema de entorno lo comprueba.
+  - El plugin `openAPI` (`/v1/auth/reference`) solo cuando la documentación está activa.
+  - `hooks` y `databaseHooks` vacíos, que el paquete necesita para registrar las clases con `@Hook()` y
+    `@DatabaseHook()`.
 - Las reglas de la cuenta (nombre, correo y contraseña) viven en `packages/contracts/src/auth.ts` y las usan el
-  formulario y el servidor. El servidor las aplica en `UserValidationHook` (`@BeforeCreate("user")` y
-  `@BeforeUpdate("user")`), para cubrir todos los endpoints que crean o modifican un usuario, no solo el registro.
-  Guarda los valores normalizados (nombre recortado, correo en minúsculas) y, si una regla falla, responde `400` con
-  `INVALID_NAME` o `INVALID_EMAIL` y un `message` fijo. Los mensajes de las reglas son el texto del formulario y nunca
-  salen de la API. Los límites de la contraseña (`passwordLength`) se leen del mismo contrato en la configuración de
-  Better Auth.
-- Las respuestas de `/v1/auth/*` no pasan por `AllExceptionsFilter`: los errores tienen la forma nativa de Better Auth
-  (`{ code, message }`), sin `requestId` ni `statusCode`, y coinciden con lo que documenta `/v1/auth/reference`. El
-  `message` de `VALIDATION_ERROR` incluye el detalle del esquema de Better Auth. El cliente de Better Auth del frontend
-  lee `error.code` de esa forma.
-- `AuthGuard` es un guard global (`APP_GUARD`, registrado por `AuthModule`). Deja la sesión en `request.session` y
-  `request.user`, y el controlador la lee con `@Session()`. Sin sesión lanza `UnauthorizedException`, que
-  `AllExceptionsFilter` responde con `401` y el código `SESSION_REQUIRED` y un mensaje fijo, que no distingue una cookie
-  ausente, caducada o manipulada. `@AllowAnonymous()` abre una ruta o un controlador al guard.
-- Límite de intentos de acceso: Better Auth aplica el suyo a `/v1/auth/*` (3 peticiones cada 10 s en `/sign-in`,
-  `/sign-up` y `/change-password`, solo con `NODE_ENV=production`), porque `ThrottlerGuard` no alcanza esas rutas. Toma
-  la IP de `X-Forwarded-For`, que sin proxy es falsificable y, con una cadena de proxies, no se puede resolver: todos
-  los clientes compartirían el contador. Con `CLIENT_IP_HEADER` (por ejemplo `CF-Connecting-IP` detrás de Cloudflare) la
-  toma de esa cabecera, igual que el límite de Nest. Solo es fiable si el proxy la sobrescribe siempre y el servidor no
-  acepta tráfico que no pase por él.
+  formulario y el servidor. `UserValidationHook` (`@BeforeCreate("user")` y `@BeforeUpdate("user")`) las aplica a todo
+  endpoint que crea o modifica un usuario. Guarda los valores normalizados (nombre recortado, correo en minúsculas) y,
+  si una regla falla, responde `400` con `INVALID_NAME` o `INVALID_EMAIL` y un `message` fijo. Los límites de la
+  contraseña (`passwordLength`) salen del mismo contrato.
+- Los errores de `/v1/auth/*` tienen la forma nativa de Better Auth (`{ code, message }`), sin `requestId` ni
+  `statusCode`, como documenta `/v1/auth/reference`. El `message` de `VALIDATION_ERROR` incluye el detalle del esquema.
+  El cliente del frontend lee `error.code`.
+- `AuthGuard` es un guard global (`APP_GUARD`) que deja la sesión en `request.session` y `request.user`. Sin sesión
+  responde `401 SESSION_REQUIRED` con un mensaje fijo, que no distingue una cookie ausente, caducada o manipulada.
+- Better Auth aplica su propio límite de intentos a `/v1/auth/*`, solo con `NODE_ENV=production`: 3 peticiones cada 10 s
+  en `/sign-in`, `/sign-up` y `/change-password`. Toma la IP de `CLIENT_IP_HEADER` si está definida y, si no, de
+  `X-Forwarded-For`, con las limitaciones descritas en el [límite de peticiones](#middlewares).
 - Con `NODE_ENV=production`, la cookie de sesión lleva `Secure` aunque el proceso reciba `http` de un proxy.
-- El plugin `admin` de Better Auth (`admin()` en `auth.ts`, con sus valores por defecto) añade el rol y el baneo de la
-  cuenta: `user.role` (`user` por defecto), `banned`, `banReason` y `banExpires`, y `session.impersonatedBy`. Sus rutas
-  están bajo `/v1/auth/admin/*` (`set-role`, `ban-user`, `unban-user`, `list-users`, `impersonate-user` y otras), con el
-  formato de error nativo de Better Auth, y solo las usa quien tiene el rol `admin`; sin control de acceso propio no
-  existen más roles. Un usuario baneado recibe `403` con el código `BANNED_USER` al iniciar sesión, y banearlo revoca
-  sus sesiones. Un baneo con fecha de vencimiento pasada se levanta solo en el siguiente inicio de sesión. Para proteger
-  una ruta propia por rol se usa `@Roles(["admin"])`, que lee `session.user.role`. No hay un primer administrador: el
-  rol se asigna con SQL directo.
-- La autorización se hace en el servicio: toda consulta se limita a la cuenta autenticada, y un recurso ajeno responde
-  `404`.
+- El plugin `admin` (`admin()` en `auth.ts`, con sus valores por defecto) añade `user.role` (`user` por defecto), el
+  baneo (`banned`, `banReason` y `banExpires`) y `session.impersonatedBy`, y sus rutas en `/v1/auth/admin/*`, solo para
+  el rol `admin`. Un usuario baneado recibe `403 BANNED_USER` al iniciar sesión y pierde sus sesiones; un baneo vencido
+  se levanta en el siguiente inicio de sesión. `@Roles(["admin"])` protege una ruta propia por rol. No hay más roles ni
+  un primer administrador: el rol se asigna con SQL directo.
 
 ### Middlewares
 
 Los middlewares globales se registran en `configureApp` (`src/app.setup.ts`) y las piezas compartidas viven en
-`src/common/middleware/`. Su orden de registro, que importa, está en
-[Ciclo de una petición](./06-vista-de-ejecucion.md#ciclo-de-una-petición).
+`src/common/middleware/`. Su orden está en [Ciclo de una petición](./06-vista-de-ejecucion.md#ciclo-de-una-petición).
 
 - **Registro.** `requestLogger` escribe una línea por petición con el `requestId`, el método, la ruta, el estado y la
-  duración. No registra cabeceras ni cuerpos.
+  duración, sin cabeceras ni cuerpos.
 - **Cabeceras de seguridad.** `app.useSecurityHeaders()`. Con `NODE_ENV=production` añade una CSP que no permite cargar
-  nada (`default-src 'none'`); en cualquier otro entorno se omite porque la documentación (Scalar) carga scripts,
-  estilos y fuentes de un CDN.
-- **CORS.** Solo acepta el origen `WEB_ORIGIN`, con `credentials: true`, y expone `X-Request-Id`. Con el frontend y la
-  API en el mismo origen el navegador no lo usa; con dominios distintos lo exige.
+  nada (`default-src 'none'`); en otros entornos se omite, porque la documentación carga recursos de un CDN.
+- **CORS.** Solo acepta el origen `WEB_ORIGIN`, con `credentials: true`, y expone `X-Request-Id`. Solo interviene si el
+  frontend y la API están en orígenes distintos.
 - **Compresión.** `compression` comprime con `gzip` las respuestas de más de 1 kB que el cliente acepta.
 - **CSRF.** `app.enableCsrfProtection({ trustedOrigins: [WEB_ORIGIN] })`, en todas las rutas, también en `/v1/auth/*`.
-  Las peticiones `GET`, `HEAD` y `OPTIONS` pasan. En las demás, rechaza con `403` las que `Sec-Fetch-Site` marca como de
-  otro origen o, si la cabecera falta, cuyo `Origin` no coincide con `Host`, salvo que el `Origin` sea de confianza.
-  `WEB_ORIGIN` lo es, porque CORS no confía automáticamente en un origen. Una petición sin `Sec-Fetch-Site` ni `Origin`,
-  que no es de un navegador, pasa. No depende de cookies ni de tokens.
-- **Límite de peticiones.** `@nestjs/throttler`, solo en producción, para que el desarrollo y las pruebas no choquen con
-  él. `RateLimitModule` (`src/common/modules/`) configura un límite global por IP (100 por minuto) y otro para las
-  escrituras (20 por minuto); `AppModule` registra `ThrottlerGuard`, para que se ejecute antes que el guard de sesión.
-  `/v1/auth/*` queda fuera, porque Better Auth lo atiende como middleware y aplica su propio límite. Responde
-  `429 RATE_LIMITED` con `Retry-After`. Con `TRUST_PROXY=true` toma la IP de la última entrada de `X-Forwarded-For`;
-  actívalo solo detrás de un proxy inverso que la añada. Con más de un proxy, esa entrada es la del más cercano y todos
-  los clientes compartirían contador: define `CLIENT_IP_HEADER`, que el límite usa si la petición trae esa cabecera y,
-  si no, la IP de la conexión.
+  Deja pasar `GET`, `HEAD` y `OPTIONS`. En las demás, rechaza con `403` las que `Sec-Fetch-Site` marca como de otro
+  origen o, sin esa cabecera, cuyo `Origin` no coincide con `Host` ni es de confianza. Una petición sin ninguna de las
+  dos cabeceras pasa ([Riesgos y deuda técnica](./11-riesgos-y-deuda-tecnica.md)).
+- **Límite de peticiones.** `@nestjs/throttler`, solo con `NODE_ENV=production`, para que el desarrollo y las pruebas no
+  choquen con él. `RateLimitModule` (`src/common/modules/`) fija un límite global por IP (100 por minuto) y otro para
+  las escrituras (20 por minuto). `AppModule` registra `ThrottlerGuard` antes que el guard de sesión. Responde
+  `429 RATE_LIMITED`.
+  - Con `TRUST_PROXY=true` toma la IP de la última entrada de `X-Forwarded-For`; solo debe activarse detrás de un proxy
+    que la añada. Sin proxy esa cabecera es falsificable, y con varios proxies la última entrada es la del más cercano,
+    de modo que todos los clientes compartirían contador.
+  - Con `CLIENT_IP_HEADER` (por ejemplo `CF-Connecting-IP` detrás de Cloudflare) toma la IP de esa cabecera o, si la
+    petición no la trae, de la conexión. Solo es fiable si el proxy la sobrescribe siempre y el servidor no acepta
+    tráfico que no pase por él.
 
 ### Caché
 
-Las respuestas no se guardan en una caché del servidor. Las rutas cuyo contenido no debe almacenarse añaden
-`Cache-Control: no-store` con el middleware `noStore` (`src/common/middleware/no-store.middleware.ts`), y la librería de
-autenticación lo añade a las suyas. Los middlewares del módulo se ejecutan antes que el guard de sesión, por lo que
-`noStore` también alcanza al `401`.
+No hay caché de servidor. Las rutas con datos del usuario añaden `Cache-Control: no-store` para que ni el navegador ni
+un proxy las guarden: el módulo registra el middleware `noStore` (`src/common/middleware/no-store.middleware.ts`) en
+`configure(consumer)`, y la librería de autenticación lo añade a las suyas. Los middlewares del módulo se ejecutan antes
+que el guard de sesión, por lo que `noStore` también alcanza al `401`.
 
 ### Datos
 
-- **Nombres de las bases de datos.** `DATABASE_URL` es la única variable de conexión y apunta a la base de desarrollo.
-  `<base>` es el nombre con el que termina esa URL. Las pruebas derivan su base añadiéndole un sufijo, en el mismo
-  servidor: `<base>_test` para las de Vitest. Cambiar el nombre en `DATABASE_URL` cambia las dos, y ningún archivo del
-  código ni de la documentación escribe un nombre fijo. La preparación de las bases de pruebas se describe en
-  [Particularidades del backend](#particularidades-del-backend).
-- `packages/database/src/schema/<name>.ts` define las tablas de cada módulo.
-- `apps/api/src/database/database.module.ts` registra el cliente de Drizzle con `@nestjs/drizzle` a partir de
-  `createDatabase` del paquete `database`. El módulo cierra el pool al apagar la aplicación, porque `main.ts` activa los
-  hooks de cierre.
-- `packages/database/drizzle.config.ts` configura Drizzle Kit, y `packages/database/migrations/` contiene las
-  migraciones versionadas. Se generan con `npm run db:generate` y se aplican con `npm run db:migrate`. El `DATABASE_URL`
-  de ese comando sale de `packages/database/.env`. Mientras no haya datos que preservar hay una sola migración,
-  `0000_db_init`, que se regenera al cambiar el esquema en lugar de añadir otra. La guía de
-  [comandos](../guias/general/comandos.md) explica cómo.
-- `npm run db:reset` deja la base de `DATABASE_URL` como recién creada: en una transacción elimina los esquemas `public`
-  y `drizzle` y recrea `public`, y después aplica las migraciones. Muestra la base, el host y el entorno, y exige
-  escribir el nombre de la base y responder `yes`; no hay forma de omitirlo. Además, `resetDatabase` se niega con
-  `NODE_ENV=production` y con un nombre de base no válido. Al eliminar `public` se pierden también sus extensiones; la
-  plantilla no usa ninguna, y si se añade una debe recrearse en `reset.ts`. Sus pruebas, en `packages/database/test/`,
-  usan una base temporal propia, porque el reinicio destruye el esquema.
-- Los identificadores son `uuid` y los genera PostgreSQL con `pg_catalog.gen_random_uuid()`. Las columnas de fecha son
-  `timestamptz` (`timestamp` con `withTimezone: true`).
+- **Nombres de las bases.** `DATABASE_URL` es la única variable de conexión y apunta a la base de desarrollo, `<base>`.
+  Las pruebas usan `<base>_test` en el mismo servidor, por lo que ningún archivo escribe un nombre fijo.
+- `packages/database/src/schema/<name>.ts` define las tablas de cada módulo, y
+  `apps/api/src/database/database.module.ts` registra el cliente de Drizzle con `@nestjs/drizzle` a partir de
+  `createDatabase`. El módulo cierra el pool al apagar la aplicación, porque `main.ts` activa los hooks de cierre.
+- Las migraciones se generan con `npm run db:generate` y se aplican con `npm run db:migrate`, con el `DATABASE_URL` de
+  `packages/database/.env`. Hay una sola, `0000_db_init`, que se regenera al cambiar el esquema
+  ([Comandos](../guias/general/comandos.md)).
+- `npm run db:reset` deja la base como recién creada: en una transacción elimina los esquemas `public` y `drizzle`,
+  recrea `public` y aplica las migraciones. Exige, sin forma de omitirlo, escribir el nombre de la base y `yes`, y
+  `resetDatabase` se niega con `NODE_ENV=production` o con un nombre de base no válido. Si se añade una extensión de
+  PostgreSQL, debe recrearse en `reset.ts`. Sus pruebas usan una base temporal propia.
+- Los identificadores son `uuid` generados por PostgreSQL (`pg_catalog.gen_random_uuid()`) y las fechas, `timestamptz`.
 - `packages/database/src/schema/auth.ts` define las tablas de Better Auth (`user`, `session`, `account` y
-  `verification`, con las columnas del plugin `admin`) y es la fuente de verdad. Lo genera la CLI de Better Auth y solo
-  se personaliza en dos puntos: las columnas de fecha son `timestamptz`, porque la CLI crea `timestamp` sin zona
-  horaria, y `updated_at` de `session` y `account` tiene `defaultNow()`. Así, al regenerarlo en un archivo temporal las
-  diferencias se limitan a esas personalizaciones y a lo que cambie en Better Auth; la guía
-  [Regenerar y comparar el esquema de Better Auth](../guias/backend/esquema-better-auth.md) explica cómo. Better Auth
-  comprueba que el esquema coincida con lo que necesita (`validateSchema`, activo fuera de producción).
+  `verification`, con las columnas del plugin `admin`). Lo genera la CLI de Better Auth con dos personalizaciones: las
+  fechas son `timestamptz` y `updated_at` de `session` y `account` tiene `defaultNow()`. La guía
+  [Regenerar y comparar el esquema de Better Auth](../guias/backend/esquema-better-auth.md) explica cómo actualizarlo.
+  Fuera de producción, Better Auth comprueba que el esquema coincide con lo que necesita (`validateSchema`).
 
 ### Configuración y entornos
 
-- Cada dominio que necesita configuración tiene su archivo `src/config/<name>.config.ts` con el esquema de sus variables
-  de entorno, una función `build` que lo valida con `parse` y devuelve la configuración, y su registro con `registerAs`.
-  Las variables de entorno conservan su nombre (`UPPER_SNAKE_CASE`) y las variables propias, derivadas o constantes, van
-  en `camelCase`, de modo que se distingue de dónde viene cada valor. Cada configuración exporta un solo tipo, derivado
-  de `build`. La guía [Definir una configuración](../guias/backend/nueva-configuracion.md) muestra el patrón.
-- `validateEnv` (`src/config/env.validation.ts`) valida todo el entorno al arrancar con los esquemas de todos los
-  dominios y detiene el proceso con un mensaje que nombra cada variable inválida, no solo la primera. Los servicios
-  reciben la configuración ya validada y con sus valores por defecto inyectando `<name>Config.KEY`, y no leen
-  `process.env`.
-- `ConfigModule` carga el `.env` de `apps/api`, que no se versiona y contiene los valores propios de cada equipo, y solo
-  lo carga si existe. Una variable definida en el entorno prevalece sobre el archivo. Usa una ruta relativa al
-  directorio de ejecución, por lo que los scripts del workspace deben ejecutarse desde `apps/api`.
-  `vitest.config.e2e.ts` lee el `.env` con `loadEnv` y lo pasa a las pruebas de integración mediante `test.env`.
-- `packages/database/drizzle.config.ts` carga `packages/database/.env` con el mismo criterio, y tampoco usa
-  `import.meta.dirname`, que no existe cuando Drizzle Kit carga el archivo como CommonJS.
-- Cada workspace tiene su propio `.env` (`apps/api/.env`, `apps/app/.env` y `packages/database/.env`). El frontend lo
-  lee con `loadEnv` y el `envDir` por defecto de Vite, y su proxy de desarrollo usa `API_PROXY_TARGET`, sin depender de
-  variables de la API.
-- Cada `.env.example` se versiona, lista las variables del workspace con valores de ejemplo y sin secretos, y sirve de
-  plantilla.
-- En producción no existe `.env`: el despliegue define las variables de entorno y debe definir `NODE_ENV=production`. La
-  documentación solo se publica con `NODE_ENV=development`. Además, en producción se activan la CSP, el límite de
-  peticiones de la API y, en la librería de autenticación, su propio límite y las cookies seguras.
+- Cada dominio tiene su archivo `src/config/<name>.config.ts` con el esquema de sus variables, una función `build` que
+  lo valida y devuelve la configuración, y su registro con `registerAs`. Exporta un solo tipo, derivado de `build`. Las
+  variables de entorno y las propias se nombran como indica el [Glosario](./12-glosario.md). La guía
+  [Definir una configuración](../guias/backend/nueva-configuracion.md) muestra el patrón.
+- `validateEnv` (`src/config/env.validation.ts`) valida todo el entorno al arrancar y detiene el proceso nombrando cada
+  variable inválida. Los servicios inyectan `<name>Config.KEY` y no leen `process.env`.
+- Cada workspace tiene su `.env` sin versionar (`apps/api`, `apps/app` y `packages/database`) y un `.env.example`
+  versionado, sin secretos, que sirve de plantilla. El `.env` se carga solo si existe, y una variable definida en el
+  entorno prevalece sobre él.
+  - `ConfigModule` usa una ruta relativa al directorio de ejecución, por lo que los scripts de la API se ejecutan desde
+    `apps/api`. `vitest.config.e2e.ts` lee el `.env` con `loadEnv` y lo pasa a las pruebas mediante `test.env`.
+  - `packages/database/drizzle.config.ts` no usa `import.meta.dirname`, que no existe cuando Drizzle Kit carga el
+    archivo como CommonJS.
+  - El frontend lo lee con `loadEnv` y el `envDir` de Vite. Su proxy de desarrollo usa `API_PROXY_TARGET`, sin depender
+    de variables de la API.
+- En producción no hay `.env`: el despliegue define las variables, incluida `NODE_ENV=production`.
 
 ## Frontend
 
@@ -300,9 +262,8 @@ funcionalidad (por ejemplo, `useProductFilters`). Así sobreviven a una recarga 
 - `PanelLayout` (`features/panel`) es el layout protegido de todas las pantallas privadas: sin sesión redirige a
   `/auth/sign-in`, y un fallo de red no redirige. `AuthLayout` redirige a la primera pantalla privada cuando ya hay
   sesión, y la raíz `/` hace lo mismo.
-- Las páginas de acceso no navegan al terminar: la redirección de `AuthLayout` ocurre cuando la sesión ya existe. Si
-  navegaran de inmediato, `PanelLayout` leería una sesión sin refrescar y redirigiría de vuelta al acceso durante unos
-  milisegundos.
+- Las páginas de acceso no navegan al terminar: redirige `AuthLayout` cuando la sesión ya existe. Si navegaran de
+  inmediato, `PanelLayout` leería una sesión sin refrescar y volvería a enviar al acceso.
 - **Mismo origen.** La cookie de sesión y la validación de `Origin` de Better Auth funcionan sin CORS cuando el
   navegador solo habla con un origen. En desarrollo lo garantiza el proxy de `server.proxy` en `vite.config.ts`, que
   reenvía `${apiBasePath}` al puerto `PORT` de la API. En producción debe hacerlo un proxy inverso que sirva el frontend
@@ -369,10 +330,8 @@ el envío falla. [React Hook Form: `handleSubmit`](https://react-hook-form.com/d
   etiqueta y su mensaje de error (`aria-invalid`, `aria-describedby`).
 - **Internacionalización:** no hay una librería de i18n definida. Los textos visibles se escriben en un único idioma,
   directamente en los componentes. Si se añade más de un idioma, esta sección debe definir dónde viven los textos.
-- **Rendimiento:** los imports directos (sin `index.ts`) mantienen el árbol de dependencias explícito. La carga diferida
-  de rutas se aplica donde el tamaño del bundle lo justifique: el panel y cada funcionalidad protegida se declaran con
-  `lazy` en su `routes.tsx`, de modo que cada pantalla se descarga al entrar en ella y la primera carga solo incluye el
-  núcleo.
+- **Rendimiento:** el panel y cada funcionalidad protegida se declaran con `lazy` en su `routes.tsx`, de modo que cada
+  pantalla se descarga al entrar en ella y la primera carga solo incluye el núcleo.
 
 ### Convenciones de nombres
 
@@ -403,18 +362,12 @@ La clasificación depende de lo que la prueba necesita para ejecutarse, no del n
 | De extremo a extremo | El frontend y la API juntas, en un navegador | Ambas aplicaciones en ejecución       |
 
 Las unitarias existen en el backend, el frontend y los paquetes. Las de componente, solo en el frontend, y las de
-integración, solo en el backend. Las de extremo a extremo todavía no existen.
+integración, solo en el backend. Las de extremo a extremo todavía no existen. Las definiciones están en el
+[Glosario](./12-glosario.md).
 
-- Una prueba unitaria puede usar el framework real (Nest o React) sin simular sus piezas. Es lo que Fowler llama una
-  prueba unitaria _sociable_ ([UnitTest](https://martinfowler.com/bliki/UnitTest.html)): lo que la hace unitaria es que
-  no necesita la aplicación completa ni una base de datos.
-- Una prueba de integración comprueba que unidades desarrolladas por separado funcionan al conectarse
-  ([IntegrationTest](https://martinfowler.com/bliki/IntegrationTest.html)).
-- «De componente» designa siempre una prueba de React. No es el _component test_ de Fowler, que es cualquier prueba que
-  limita su alcance a una parte del sistema ([Software Testing Guide](https://martinfowler.com/testing)). Las pruebas de
-  la API que arrancan la aplicación aunque no usen la base de datos, como las de errores o salud, son de integración en
-  este proyecto.
-- Las pruebas de una página con MSW son de componentes, aunque recorran varios componentes, el enrutado y la caché de
+- Una prueba de la API que arranca la aplicación es de integración aunque no use la base de datos, como las de errores o
+  salud.
+- Una prueba de una página con MSW es de componente, aunque recorra varios componentes, el enrutado y la caché de
   consultas.
 
 ### Ubicación y convenciones
@@ -422,10 +375,7 @@ integración, solo en el backend. Las de extremo a extremo todavía no existen.
 - Las unitarias y las de componentes viven junto al archivo que prueban. En el frontend y los paquetes se nombran
   `<archivo>.test.ts` o `<archivo>.test.tsx` (`fetch-products.test.ts`, `product-form.test.tsx`), y en la API,
   `<archivo>.spec.ts`, la convención de Nest.
-- Las de integración viven en `test/<módulo>/` de la aplicación y se nombran `<nombre>.e2e-spec.ts`. Hoy solo existen en
-  `apps/api`.
-- Lo que una aplicación comparte entre sus pruebas y no es una prueba (la preparación de la base de datos, el servidor
-  de MSW) vive en `test/support/` en la API y en `src/test/` en el frontend.
+- Las de integración viven en `apps/api/test/<módulo>/` y se nombran `<nombre>.e2e-spec.ts`.
 - Cada paquete con pruebas tiene su propio `vitest.config.ts` y su script `test`. `contracts` prueba sus esquemas junto
   a ellos (`src/auth.test.ts`). `database` mantiene sus pruebas en `test/`, y todas usan PostgreSQL.
 - Los casos límite de una regla se prueban en unitarias. Las de integración comprueban que las piezas están conectadas y
@@ -449,55 +399,32 @@ integración, solo en el backend. Las de extremo a extremo todavía no existen.
 
 ### Particularidades del backend
 
-- Las pruebas de integración de `apps/api/test/` arrancan la aplicación con `createTestApp`
-  (`test/support/test-app.ts`), que monta `AppModule` y aplica `configureApp` igual que `main.ts`, y la llaman con
-  Supertest. El cliente de `test/support/test-client.ts` construye las URL con `apiBasePath` y envía `Origin` como un
-  navegador.
-- Usan una base PostgreSQL real, por lo que comprueban las consultas, los códigos de estado y los cuerpos públicos. Las
-  rutas que exigen sesión se prueban con el flujo real: `signUp` registra un usuario y devuelve su cookie, y
-  `deleteUsers` elimina los usuarios de cada archivo según su prefijo de correo.
-- Para provocar un error que la API no produce, `createTestApp` acepta controladores de prueba que se registran solo en
-  esa aplicación.
-- `vitest.config.ts` incluye los `*.spec.ts` y no tiene preparación global. `vitest.config.e2e.ts` incluye los
-  `*.e2e-spec.ts`, fija `NODE_ENV=development` y deriva la conexión de `DATABASE_URL` hacia `<base>_test` (ver
-  [Datos](#datos)).
-- `test/support/global-setup.ts` solo corre con la configuración de integración: crea la base de pruebas si no existe y
-  aplica las migraciones antes de ejecutarlas, por lo que `npm test` no necesita pasos manuales.
-- La preparación rechaza una `DATABASE_URL` que ya termine en `_test`, para no derivar una base de pruebas de otra de
-  pruebas. `test/database/ensure-database.e2e-spec.ts` comprueba la creación de la base con una base temporal.
-- El límite de peticiones y la CSP solo se activan con `NODE_ENV=production`, por lo que
-  `test/common/production.e2e-spec.ts` vuelve a importar la aplicación con ese valor (`createTestApp({ env })`, que usa
-  `vi.resetModules()` y `vi.stubEnv()`). Cada prueba empieza con contadores nuevos. Si se quita un middleware de
-  `configureApp`, falla una prueba de integración.
-- Las pruebas de la documentación hacen lo mismo con otro `NODE_ENV` para comprobar que solo se publica con
-  `development` y que responde `404` con `production`, con `test` y sin la variable.
-- El esquema de entorno se prueba de forma unitaria con objetos, sin tocar `process.env`, por lo que la prueba no
-  depende del `.env` de quien la ejecute. La dirección del cliente no se exporta: se prueba por su efecto, comprobando
-  qué peticiones comparten contador.
+- Las pruebas de integración arrancan la aplicación con `createTestApp` (`test/support/test-app.ts`), que monta
+  `AppModule` y aplica `configureApp` igual que `main.ts`, contra una base PostgreSQL real. Las rutas con sesión se
+  prueban con el flujo real de registro. La guía [Escribir una prueba en el backend](../guias/backend/nueva-prueba.md)
+  muestra el cliente, `signUp`, `deleteUsers` y los controladores de prueba.
+- `vitest.config.ts` incluye los `*.spec.ts`, sin preparación global. `vitest.config.e2e.ts` incluye los
+  `*.e2e-spec.ts`, fija `NODE_ENV=development` y deriva la conexión hacia `<base>_test`. Su preparación
+  (`test/support/global-setup.ts`) crea esa base si no existe y aplica las migraciones, y rechaza una `DATABASE_URL` que
+  ya termine en `_test`. `test/database/ensure-database.e2e-spec.ts` lo comprueba con una base temporal.
+- El comportamiento que depende de `NODE_ENV`, como el límite de peticiones, la CSP o la documentación, se prueba
+  volviendo a importar la aplicación con `createTestApp({ env })` (`vi.resetModules()` y `vi.stubEnv()`), con contadores
+  nuevos en cada prueba. Si se quita un middleware de `configureApp`, falla una prueba de integración.
+- La dirección del cliente para el límite no se exporta: se prueba comprobando qué peticiones comparten contador.
 - `test/database/db-schema.e2e-spec.ts` compara las tablas que Better Auth necesita (`getAuthTables`) con la base
-  migrada: columnas, tipos, nulabilidad y claves foráneas, con ids `uuid` y fechas `timestamptz`.
-  `test/database/app-schema.e2e-spec.ts` comprueba el esquema de las tablas de la aplicación y el borrado en cascada.
-- Bajo Vitest, Better Auth desactiva la comprobación de origen de las peticiones. El rechazo de un origen no confiable
-  por parte de la librería (`403 INVALID_ORIGIN`) no puede probarse allí y se comprueba contra la API en ejecución. La
-  protección CSRF de la API sí se prueba.
-- Cada prueba de integración crea sus propios usuarios y los elimina al terminar, lo que borra también los datos
-  asociados.
-- **Aislamiento entre archivos.** Todos los archivos de integración comparten una sola base, `<base>_test`, y se
-  ejecutan en paralelo. Cada archivo se aísla con un prefijo de correo propio y elimina sus usuarios al terminar. Esto
-  funciona mientras los datos de la prueba cuelguen de un usuario. Una prueba que necesita datos globales, sin
-  propietario, o que cuenta las filas de toda una tabla, no puede usar este aislamiento y requiere su propia base o
-  esquema.
-- **Reglas de un servicio.** Las que consultan la base de datos se prueban en integración contra PostgreSQL: las
-  consultas viven en el servicio y simular el cliente de Drizzle ataría la prueba a la forma exacta de cada consulta. La
-  lógica pura, sin consultas, se prueba de forma unitaria; si depende de otro provider, se sustituye con `useValue` en
-  `Test.createTestingModule`, como muestra la guía
-  [Escribir una prueba en el backend](../guias/backend/nueva-prueba.md).
-- **Guards globales.** `ThrottlerGuard` y `AuthGuard` se registran con `{ provide: APP_GUARD, useClass: ... }`, y ni
-  `overrideGuard` ni `overrideProvider` alcanzan a un guard registrado así
-  (`.agents/skills/nestjs-testing/references/testing.md`). Por eso no se sustituyen: el límite de peticiones se prueba
-  recargando la aplicación con `NODE_ENV=production`, y la sesión, con el flujo real de `signUp`.
-- **Código que depende del tiempo.** Se inyecta el reloj o la espera y la prueba los controla, en lugar de dormir en la
-  prueba.
+  migrada, y `test/database/app-schema.e2e-spec.ts`, las tablas de la aplicación y el borrado en cascada.
+- Bajo Vitest, Better Auth desactiva su comprobación de origen, así que `403 INVALID_ORIGIN` no se prueba allí
+  ([Riesgos](./11-riesgos-y-deuda-tecnica.md#riesgos)). La protección CSRF de la API sí se prueba.
+- **Aislamiento entre archivos.** Los archivos de integración se ejecutan en paralelo contra la misma base. Cada uno usa
+  un prefijo de correo propio y elimina sus usuarios al terminar, lo que borra sus datos. Una prueba con datos sin
+  propietario, o que cuenta las filas de toda una tabla, necesita su propia base o esquema.
+- **Reglas de un servicio.** Las que consultan la base se prueban en integración: simular el cliente de Drizzle ataría
+  la prueba a la forma de cada consulta. La lógica pura se prueba de forma unitaria, sustituyendo otros providers con
+  `useValue`.
+- **Guards globales.** `ThrottlerGuard` y `AuthGuard` se registran con `{ provide: APP_GUARD, useClass: ... }`, que
+  `overrideGuard` y `overrideProvider` no alcanzan (`.agents/skills/nestjs-testing/references/testing.md`). No se
+  sustituyen: el límite se prueba recargando la aplicación con `NODE_ENV=production` y la sesión, con el registro real.
+- **Código que depende del tiempo.** Se inyecta el reloj o la espera y la prueba los controla, en lugar de dormir.
 
 ### Particularidades del frontend
 
