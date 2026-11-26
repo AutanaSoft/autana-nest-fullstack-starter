@@ -1,7 +1,22 @@
 import { z } from "zod"
 
-export const healthResponseSchema = z.object({
-  status: z.literal("ok").meta({ example: "ok" }),
+// Resultado de un indicador de Terminus. `message` solo aparece cuando falla; el resto de campos dependen del
+// indicador, por lo que se conservan sin validarlos.
+export const healthIndicatorSchema = z.looseObject({
+  status: z.enum(["up", "degraded", "down"]).meta({ example: "up" }),
+  message: z.string().optional(),
 })
 
+const healthIndicatorsSchema = z.record(z.string(), healthIndicatorSchema)
+
+// Formato de respuesta de Terminus: `details` reúne todos los indicadores, e `info` y `error` los separan según su
+// estado. Con `status: "error"` la API responde 503 con este mismo cuerpo.
+export const healthResponseSchema = z.object({
+  status: z.enum(["ok", "degraded", "error", "shutting_down"]).meta({ example: "ok" }),
+  info: healthIndicatorsSchema.optional(),
+  error: healthIndicatorsSchema.optional(),
+  details: healthIndicatorsSchema,
+})
+
+export type HealthIndicator = z.infer<typeof healthIndicatorSchema>
 export type HealthResponse = z.infer<typeof healthResponseSchema>

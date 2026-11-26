@@ -11,7 +11,7 @@ async function requestStatuses(nodeEnv: string | undefined) {
   try {
     const client = createClient(app)
     const docs = await Promise.all(docsPaths.map(async (path) => (await client.request(path)).status))
-    const health = (await client.request("/health")).status
+    const health = (await client.request("/health/live")).status
     return { docs, health }
   } finally {
     await app.close()
@@ -65,6 +65,7 @@ describe("documentación de la API", () => {
       expect(Object.keys(document.components.schemas).toSorted()).toEqual([
         "CreateTask",
         "ErrorResponse",
+        "HealthIndicator",
         "HealthResponse",
         "ListTasksResponse",
         "Profile",
@@ -82,6 +83,22 @@ describe("documentación de la API", () => {
       expect(create.responses["201"].content["application/json"].schema).toEqual({
         $ref: "#/components/schemas/Task",
       })
+    })
+
+    it("describe las rutas de salud con la respuesta 200 y la 503 del contrato", () => {
+      const healthResponse = { $ref: "#/components/schemas/HealthResponse" }
+      for (const path of ["/health/live", "/health/ready", "/health"]) {
+        const get = document.paths[`${apiBasePath}${path}`].get as {
+          responses: Record<string, { content: Record<string, { schema: unknown }> }>
+        }
+        expect(get.responses["200"].content["application/json"].schema).toEqual(healthResponse)
+      }
+      for (const path of ["/health/ready", "/health"]) {
+        const get = document.paths[`${apiBasePath}${path}`].get as {
+          responses: Record<string, { content: Record<string, { schema: unknown }> }>
+        }
+        expect(get.responses["503"].content["application/json"].schema).toEqual(healthResponse)
+      }
     })
   })
 

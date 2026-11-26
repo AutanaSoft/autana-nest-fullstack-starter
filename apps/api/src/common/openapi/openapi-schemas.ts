@@ -1,6 +1,6 @@
 import z from "zod"
 import { errorResponseSchema } from "@autana/contracts/errors"
-import { healthResponseSchema } from "@autana/contracts/health"
+import { healthIndicatorSchema, healthResponseSchema } from "@autana/contracts/health"
 import { profileSchema, updateProfileSchema } from "@autana/contracts/profile"
 import { createTaskSchema, listTasksResponseSchema, taskSchema, updateTaskSchema } from "@autana/contracts/tasks"
 
@@ -14,6 +14,7 @@ const schemaIds = {
   UpdateTask: updateTaskSchema,
   Profile: profileSchema,
   UpdateProfile: updateProfileSchema,
+  HealthIndicator: healthIndicatorSchema,
   HealthResponse: healthResponseSchema,
   ErrorResponse: errorResponseSchema,
 }

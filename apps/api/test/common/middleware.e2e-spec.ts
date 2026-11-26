@@ -51,7 +51,7 @@ describe("middleware", () => {
 
   describe("cabeceras de seguridad", () => {
     it("las añade a las respuestas de la API", async () => {
-      const response = await client.request("/health")
+      const response = await client.request("/health/live")
 
       expect(response.headers["x-content-type-options"]).toBe("nosniff")
       expect(response.headers["x-frame-options"]).toBeTruthy()
@@ -60,7 +60,7 @@ describe("middleware", () => {
 
   describe("CORS", () => {
     it("responde al preflight del origen del frontend con cookies", async () => {
-      const response = await client.request("/health", {
+      const response = await client.request("/health/live", {
         method: "OPTIONS",
         headers: { "Access-Control-Request-Method": "POST" },
       })
@@ -70,7 +70,7 @@ describe("middleware", () => {
     })
 
     it("no autoriza un origen ajeno", async () => {
-      const response = await client.request("/health", {
+      const response = await client.request("/health/live", {
         headers: { Origin: "https://evil.example" },
       })
 
@@ -78,7 +78,7 @@ describe("middleware", () => {
     })
 
     it("expone X-Request-Id al navegador", async () => {
-      const response = await client.request("/health")
+      const response = await client.request("/health/live")
 
       expect(response.headers["access-control-expose-headers"]).toContain("X-Request-Id")
     })
@@ -135,12 +135,12 @@ describe("middleware", () => {
     it("registra método, ruta, estado y el identificador de la petición", async () => {
       const log = vi.spyOn(Logger.prototype, "log").mockImplementation(() => {})
 
-      const response = await client.request("/health", {
+      const response = await client.request("/health/live", {
         headers: { "X-Request-Id": "log-test-1" },
       })
 
       expect(response.status).toBe(200)
-      expect(log).toHaveBeenCalledWith(expect.stringMatching(/^\[log-test-1\] GET \/v1\/health 200 \d+ms$/))
+      expect(log).toHaveBeenCalledWith(expect.stringMatching(/^\[log-test-1\] GET \/v1\/health\/live 200 \d+ms$/))
     })
   })
 })
