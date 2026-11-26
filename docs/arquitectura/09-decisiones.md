@@ -104,6 +104,13 @@ Cada entrada recoge una decisión, su motivo y la alternativa descartada. Los pr
   [Microsoft](https://learn.microsoft.com/aspnet/core/test/integration-tests).
 - **Una base de pruebas compartida, con aislamiento por prefijo de correo.** No hay que crear ni migrar una base por
   archivo. Descartado: una base o un esquema por archivo, sin una necesidad demostrada.
+- **Un umbral de cobertura común, en la configuración de Vitest: 80 % en sentencias, funciones y líneas, y 75 % en
+  ramas.** Está entre el 75 % «encomiable» y el 90 % «ejemplar» que propone
+  [Google](https://testing.googleblog.com/2020/08/code-coverage-best-practices.html), y en el 80 % que exige
+  [SonarQube](https://docs.sonarsource.com/sonarqube-server/2025.4/quality-standards-administration/managing-quality-gates/introduction-to-quality-gates)
+  al código nuevo; las ramas, más difíciles de cubrir, tienen el valor más bajo. Deja margen sobre la cobertura actual y
+  no depende del código de ejemplo. `npm test` lo aplica igual en el hook y en la CI. Descartados: fijar como umbral la
+  cobertura actual, que falla con cualquier cambio pequeño, y un script de cobertura aparte, que podría no ejecutarse.
 - **Los guards globales no se sustituyen en las pruebas.** Descartado: registrarlos con `useExisting` para poder
   sustituirlos, que cambia el módulo solo para las pruebas.
 - **Cada middleware se prueba aislado y registrado en la aplicación.** La prueba aislada comprueba la pieza y la de

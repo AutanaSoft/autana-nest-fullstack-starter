@@ -65,7 +65,7 @@
 | Tecnología                                       | Versión  | Rol                                                  |
 | ------------------------------------------------ | -------- | ---------------------------------------------------- |
 | Vitest                                           | ^5.1.1   | Ejecutor de pruebas                                  |
-| Vitest (solo en `apps/api`)                      | ^4.1.2   | Ejecutor de pruebas de la API                        |
+| `@vitest/coverage-v8`                            | ^5.1.1   | Cobertura de las pruebas                             |
 | Supertest (`supertest`)                          | ^7.0.0   | Peticiones HTTP en las pruebas de la API             |
 | `@nestjs/testing`                                | ^12.0.1  | Módulos de prueba de Nest                            |
 | React Testing Library (`@testing-library/react`) | ^16.3.3  | Pruebas de componentes                               |

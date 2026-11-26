@@ -9,5 +9,14 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
+    coverage: {
+      enabled: true,
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.test.{ts,tsx}", "src/test/**", "src/main.tsx"],
+      reportsDirectory: "../../.coverage/app",
+      reporter: ["text-summary", "html"],
+      // Umbral común del proyecto (ver 09-decisiones.md).
+      thresholds: { statements: 80, branches: 75, functions: 80, lines: 80 },
+    },
   },
 })

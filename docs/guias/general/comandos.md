@@ -9,7 +9,8 @@ Ejecútalos desde la raíz del repositorio.
 - `npm run lint:md`: ejecuta markdownlint sobre los archivos Markdown.
 - `npm run check`: comprueba el formato con Prettier, ejecuta Oxlint y la comprobación de tipos, y ejecuta markdownlint.
   No modifica archivos y se detiene en la primera comprobación que falla.
-- `npm test`: ejecuta las pruebas de Vitest de todos los workspaces. Crea la base `<base>_test` si falta.
+- `npm test`: ejecuta las pruebas de Vitest de todos los workspaces y comprueba sus umbrales de cobertura. Crea la base
+  `<base>_test` si falta.
 - `npm run test:unit -w api`: ejecuta solo las pruebas unitarias de la API. No necesita PostgreSQL.
 - `npm run test:e2e -w api`: ejecuta solo las pruebas de integración de la API. Crea la base `<base>_test` si falta.
 - `npm run db:generate`: genera una migración de Drizzle Kit a partir del esquema. Mientras no haya datos que preservar
@@ -23,5 +24,4 @@ Para crear la base y definir `<base>`, consulta la [guía de configuración](./c
 
 ## Antes de enviar cambios
 
-Ejecuta `npm run check` y `npm test`. Los hooks de Git formatean los archivos preparados y validan el mensaje del
-commit.
+El hook `pre-push` ejecuta `npm run check` y `npm test` antes de cada push, así que PostgreSQL debe estar en marcha.

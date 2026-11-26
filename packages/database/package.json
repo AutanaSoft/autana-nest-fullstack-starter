@@ -19,6 +19,7 @@
     "@autana/oxlint-config": "*",
     "@types/node": "^26.6.6",
     "@types/pg": "^8.23.1",
+    "@vitest/coverage-v8": "^5.1.1",
     "drizzle-kit": "^0.31.11",
     "typescript": "~6.0.2",
     "vite": "^8.3.8",
