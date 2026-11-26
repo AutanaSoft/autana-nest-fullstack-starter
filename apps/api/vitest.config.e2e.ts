@@ -14,6 +14,15 @@ export default defineConfig(({ mode }) => {
       root: "./",
       include: ["**/*.e2e-spec.ts"],
       globalSetup: "./test/support/global-setup.ts",
+      coverage: {
+        enabled: true,
+        include: ["src/**/*.ts"],
+        exclude: ["src/**/*.spec.ts", "src/main.ts"],
+        reportsDirectory: "../../.coverage/api/e2e",
+        reporter: ["text-summary", "html"],
+        // Umbral común del proyecto (ver 09-decisiones.md).
+        thresholds: { statements: 80, branches: 75, functions: 80, lines: 80 },
+      },
       // NODE_ENV=development publica la documentación de la API, que las pruebas comprueban.
       env: {
         ...env,

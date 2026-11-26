@@ -382,8 +382,11 @@ integración, solo en el backend. Las de extremo a extremo todavía no existen. 
   `<archivo>.test.ts` o `<archivo>.test.tsx` (`fetch-products.test.ts`, `product-form.test.tsx`), y en la API,
   `<archivo>.spec.ts`, la convención de Nest.
 - Las de integración viven en `apps/api/test/<módulo>/` y se nombran `<nombre>.e2e-spec.ts`.
-- Cada paquete con pruebas tiene su propio `vitest.config.ts` y su script `test`. `contracts` prueba sus esquemas junto
-  a ellos (`src/auth.test.ts`). `database` mantiene sus pruebas en `test/`, y todas usan PostgreSQL.
+- Un workspace tiene pruebas cuando contiene lógica propia: `api`, `app`, `contracts` y `database`. `ui` no las tiene,
+  porque son los componentes que genera shadcn/ui, que se prueban a través del frontend, ni `oxlint-config`, que solo
+  contiene configuración.
+- Cada workspace con pruebas tiene su propio `vitest.config.ts` y su script `test`. `contracts` prueba sus esquemas
+  junto a ellos (`src/auth.test.ts`). `database` mantiene sus pruebas en `test/`, y todas usan PostgreSQL.
 - Los casos límite de una regla se prueban en unitarias. Las de integración comprueban que las piezas están conectadas y
   que los flujos completos funcionan, no cada combinación de entradas. La proporción sigue la forma de pirámide: muchas
   unitarias y menos pruebas cuanto más amplio es el alcance
@@ -393,6 +396,20 @@ integración, solo en el backend. Las de extremo a extremo todavía no existen. 
   PostgreSQL. Los comandos están en [Comandos](../guias/general/comandos.md).
 - Para escribir una prueba, consulta las guías [Escribir una prueba en el backend](../guias/backend/nueva-prueba.md) y
   [Escribir pruebas en el frontend](../guias/frontend/nueva-funcionalidad/pruebas.md).
+
+### Cobertura
+
+Cada configuración de Vitest mide la cobertura de `src/` en cada ejecución (`coverage.enabled`), con
+`@vitest/coverage-v8`, y falla si alguna métrica baja de su umbral (`coverage.thresholds`). Por eso `npm test` la exige
+en el hook `pre-push` y en la integración continua.
+
+- Se excluyen las pruebas y los puntos de entrada (`main.ts`, `main.tsx` y `scripts/` de `database`). `database` excluye
+  también `schema/`, que cubren las pruebas de la API.
+- El resumen se muestra en la terminal y el informe HTML se escribe en `.coverage/<workspace>/`, en la raíz y sin
+  versionar. La API mide cada nivel por separado (`.coverage/api/unit` y `.coverage/api/e2e`).
+- Todas las configuraciones usan el mismo umbral: 80 % en sentencias, funciones y líneas, y 75 % en ramas. La
+  configuración unitaria de la API no tiene umbral, porque los servicios que consultan la base se prueban en
+  integración.
 
 ### Qué cubre cada nivel en una API REST
 
@@ -470,8 +487,11 @@ anterior de la misma rama. Tiene dos trabajos:
   `.env` y ejecuta `npm test`. Turborepo solo pasa a las tareas las variables declaradas en `turbo.json`, por lo que las
   pruebas leen su entorno de esos `.env`.
 
-Además, GitHub ejecuta el análisis de CodeQL en los pull requests. Los hooks de Husky comprueban el código en local,
-pero se pueden omitir; la integración continua es la barrera que no.
+Además, GitHub ejecuta el análisis de CodeQL en los pull requests.
+
+Los hooks de Husky repiten esas comprobaciones en local: `pre-commit` ejecuta `lint-staged` sobre los archivos
+preparados, `commit-msg` valida el mensaje con commitlint y `pre-push` ejecuta `npm run check` y `npm test`, por lo que
+necesita PostgreSQL en marcha. Se pueden omitir con `--no-verify`; la integración continua es la barrera que no.
 
 ### Pruebas de extremo a extremo
 
