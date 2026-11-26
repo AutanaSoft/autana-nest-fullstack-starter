@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest"
 import { cleanup } from "@testing-library/react"
+import { cleanStores } from "nanostores"
 import { afterAll, afterEach } from "vitest"
 
 import { server } from "./server"
@@ -11,4 +12,12 @@ afterEach(() => {
   cleanup()
   server.resetHandlers()
 })
-afterAll(() => server.close())
+afterAll(async () => {
+  // Nanostores libera el store de sesión 1 s después de desmontar el último componente. Si ese temporizador vence cuando
+  // jsdom ya se destruyó, Better Auth lanza `removeEventListener is not a function` y Vitest falla la ejecución.
+  // `cleanStores` ejecuta la liberación al terminar cada archivo, también en los que no usan `renderWithProviders`. El
+  // import es dinámico para que el cliente capture `fetch` después de `server.listen`.
+  const { authClient } = await import("@/lib/auth-client")
+  cleanStores(authClient.$store.atoms.session)
+  server.close()
+})
