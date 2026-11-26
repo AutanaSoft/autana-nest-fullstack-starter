@@ -12,7 +12,7 @@ function renderAt(path: string) {
   const router = createMemoryRouter(
     [
       { path: "/auth", Component: AuthLayout, children: [{ path: "sign-in", element: <p>Formulario de acceso</p> }] },
-      { path: "/tasks", element: <p>Panel</p> },
+      { path: "/", element: <p>Panel</p> },
     ],
     { initialEntries: [path] }
   )
@@ -30,12 +30,12 @@ describe("AuthLayout", () => {
     expect(router.state.location.pathname).toBe("/auth/sign-in")
   })
 
-  it("con sesión redirige a /tasks", async () => {
+  it("con sesión redirige a /", async () => {
     await mockSession(session)
 
     const router = renderAt("/auth/sign-in")
 
     expect(await screen.findByText("Panel")).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe("/tasks")
+    expect(router.state.location.pathname).toBe("/")
   })
 })

@@ -73,19 +73,19 @@ guía [componentes-shadcn](../guias/frontend/componentes-shadcn.md). Ya están i
 para el uso de memoria y disco), se añade con la CLI de shadcn, no se escribe a mano. No se crean componentes propios
 que dupliquen uno de shadcn.
 
-- [ ] 3.1 Borrar `apps/app/src/features/tasks/` y `apps/app/src/features/profile/`.
-- [ ] 3.2 Crear `features/status/`: `api/fetch-health.ts`, `hooks/use-health-query.ts`, `pages/status-page.tsx` y
+- [x] 3.1 Borrar `apps/app/src/features/tasks/` y `apps/app/src/features/profile/`.
+- [x] 3.2 Crear `features/status/`: `api/fetch-health.ts`, `hooks/use-health-query.ts`, `pages/status-page.tsx` y
       `routes.tsx`, en la ruta índice `/`.
-- [ ] 3.3 Crear `features/account/`: trasladar `name-form`, `name-form-schema` y `update-name` desde `profile`, y crear
+- [x] 3.3 Crear `features/account/`: trasladar `name-form`, `name-form-schema` y `update-name` desde `profile`, y crear
       `pages/account-page.tsx` y `routes.tsx` en `/account`.
-- [ ] 3.4 Registrar las rutas en `app/router.tsx` con `createPanelRoutes([statusRoutes, accountRoutes])` y quitar la
+- [x] 3.4 Registrar las rutas en `app/router.tsx` con `createPanelRoutes([statusRoutes, accountRoutes])` y quitar la
       redirección de `/`.
-- [ ] 3.5 Cambiar la redirección de `auth-layout.tsx` y los comentarios de `sign-in-page.tsx` y `sign-up-page.tsx` a
+- [x] 3.5 Cambiar la redirección de `auth-layout.tsx` y los comentarios de `sign-in-page.tsx` y `sign-up-page.tsx` a
       `/`.
-- [ ] 3.6 Actualizar la navegación: "Estado" y "Cuenta" en `app-sidebar.tsx`, y "Cuenta" hacia `/account` en
+- [x] 3.6 Actualizar la navegación: "Estado" y "Cuenta" en `app-sidebar.tsx`, y "Cuenta" hacia `/account` en
       `nav-user.tsx`.
-- [ ] 3.7 Añadir pruebas de `fetch-health`, `status-page`, `account-page` y `update-name`.
-- [ ] 3.8 Actualizar las pruebas de `router`, `auth-layout`, `sign-in-page`, `sign-up-page`, `nav-user`, `nav-main`,
+- [x] 3.7 Añadir pruebas de `fetch-health`, `status-page`, `account-page` y `update-name`.
+- [x] 3.8 Actualizar las pruebas de `router`, `auth-layout`, `sign-in-page`, `sign-up-page`, `nav-user`, `nav-main`,
       `site-header` y `panel-layout` que usan `/tasks` o `/profile`.
 
 **Criterios de aceptación**

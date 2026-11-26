@@ -10,8 +10,8 @@ import { NavMain } from "./nav-main"
 afterEach(() => vi.unstubAllGlobals())
 
 const items = [
-  { title: "Tareas", url: "/tasks", icon: null },
-  { title: "Perfil", url: "/profile", icon: null },
+  { title: "Estado", url: "/", icon: null },
+  { title: "Cuenta", url: "/account", icon: null },
 ]
 
 function renderAt(path: string) {
@@ -34,16 +34,16 @@ function renderAt(path: string) {
 
 describe("NavMain", () => {
   it("enlaza cada entrada con su ruta", () => {
-    renderAt("/tasks")
+    renderAt("/")
 
-    expect(screen.getByRole("link", { name: "Tareas" })).toHaveAttribute("href", "/tasks")
-    expect(screen.getByRole("link", { name: "Perfil" })).toHaveAttribute("href", "/profile")
+    expect(screen.getByRole("link", { name: "Estado" })).toHaveAttribute("href", "/")
+    expect(screen.getByRole("link", { name: "Cuenta" })).toHaveAttribute("href", "/account")
   })
 
   it("marca como activa solo la entrada de la ruta actual, también en sus subrutas", () => {
-    renderAt("/tasks/1")
+    renderAt("/account/security")
 
-    expect(screen.getByRole("link", { name: "Tareas" })).toHaveAttribute("data-active")
-    expect(screen.getByRole("link", { name: "Perfil" })).not.toHaveAttribute("data-active")
+    expect(screen.getByRole("link", { name: "Cuenta" })).toHaveAttribute("data-active")
+    expect(screen.getByRole("link", { name: "Estado" })).not.toHaveAttribute("data-active")
   })
 })

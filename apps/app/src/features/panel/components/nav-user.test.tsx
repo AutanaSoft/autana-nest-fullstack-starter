@@ -17,7 +17,7 @@ function renderNavUser(name = "Ana Ruiz") {
   const router = createMemoryRouter(
     [
       {
-        path: "/tasks",
+        path: "/account",
         element: (
           <SidebarProvider>
             <NavUser user={{ name, email: "ana@mail.com" }} />
@@ -26,7 +26,7 @@ function renderNavUser(name = "Ana Ruiz") {
       },
       { path: "/auth/sign-in", element: <p>Pantalla de acceso</p> },
     ],
-    { initialEntries: ["/tasks"] }
+    { initialEntries: ["/account"] }
   )
   render(<RouterProvider router={router} />)
   return { router, user: userEvent.setup() }
@@ -50,12 +50,12 @@ describe("NavUser", () => {
     expect(screen.getByText("ana@mail.com")).toBeInTheDocument()
   })
 
-  it("el menú enlaza con el perfil", async () => {
+  it("el menú enlaza con la cuenta", async () => {
     const { user } = renderNavUser()
 
     await user.click(screen.getByRole("button", { name: /Ana Ruiz/ }))
 
-    expect(await screen.findByRole("menuitem", { name: "Perfil" })).toHaveAttribute("href", "/profile")
+    expect(await screen.findByRole("menuitem", { name: "Cuenta" })).toHaveAttribute("href", "/account")
   })
 
   it("cerrar sesión llama a la API y lleva a la pantalla de acceso", async () => {

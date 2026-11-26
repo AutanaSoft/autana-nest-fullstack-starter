@@ -20,7 +20,7 @@ function renderAt(path: string) {
           </SidebarProvider>
         ),
         children: [
-          { path: "/tasks", handle: { title: "Tareas" }, element: null },
+          { path: "/account", handle: { title: "Cuenta" }, element: null },
           { path: "/sin-titulo", element: null },
         ],
       },
@@ -32,9 +32,9 @@ function renderAt(path: string) {
 
 describe("SiteHeader", () => {
   it("muestra el título que declara la ruta", () => {
-    renderAt("/tasks")
+    renderAt("/account")
 
-    expect(screen.getByRole("heading", { level: 1, name: "Tareas" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { level: 1, name: "Cuenta" })).toBeInTheDocument()
   })
 
   it("no muestra título si la ruta no lo declara", () => {

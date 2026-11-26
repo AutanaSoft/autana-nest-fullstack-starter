@@ -15,12 +15,12 @@ describe("getApiErrorCode", () => {
   it("devuelve el code del cuerpo de error de la API", async () => {
     const error = await failWith(
       HttpResponse.json(
-        { message: "Task not found", error: "Not Found", statusCode: 404, code: "TASK_NOT_FOUND", requestId: "r1" },
+        { message: "User not found", error: "Not Found", statusCode: 404, code: "USER_NOT_FOUND", requestId: "r1" },
         { status: 404 }
       )
     )
 
-    expect(getApiErrorCode(error)).toBe("TASK_NOT_FOUND")
+    expect(getApiErrorCode(error)).toBe("USER_NOT_FOUND")
   })
 
   it("devuelve null si el cuerpo no es un error de la API", async () => {

@@ -17,7 +17,7 @@ afterEach(() => vi.unstubAllGlobals())
 function renderAt(path: string) {
   const router = createMemoryRouter(
     [
-      { path: "/tasks", Component: PanelLayout, children: [{ index: true, element: <p>Contenido del panel</p> }] },
+      { path: "/account", Component: PanelLayout, children: [{ index: true, element: <p>Contenido del panel</p> }] },
       { path: "/auth/sign-in", element: <p>Pantalla de acceso</p> },
     ],
     { initialEntries: [path] }
@@ -31,11 +31,11 @@ describe("PanelLayout", () => {
     stubMatchMedia()
     await mockSession(session)
 
-    const router = renderAt("/tasks")
+    const router = renderAt("/account")
 
     expect(await screen.findByText("Contenido del panel")).toBeInTheDocument()
     expect(screen.getByText("ana@mail.com")).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe("/tasks")
+    expect(router.state.location.pathname).toBe("/account")
   })
 
   it("mientras comprueba la sesión por primera vez muestra un indicador de carga", async () => {
@@ -46,12 +46,12 @@ describe("PanelLayout", () => {
     const router = createMemoryRouter(
       [
         {
-          path: "/tasks",
+          path: "/account",
           Component: FreshPanelLayout,
           children: [{ index: true, element: <p>Contenido del panel</p> }],
         },
       ],
-      { initialEntries: ["/tasks"] }
+      { initialEntries: ["/account"] }
     )
 
     render(<RouterProvider router={router} />)
@@ -64,7 +64,7 @@ describe("PanelLayout", () => {
   it("sin sesión redirige a /auth/sign-in", async () => {
     await mockSession(null)
 
-    const router = renderAt("/tasks")
+    const router = renderAt("/account")
 
     expect(await screen.findByText("Pantalla de acceso")).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/auth/sign-in")
@@ -73,9 +73,9 @@ describe("PanelLayout", () => {
   it("un error del servidor al comprobar la sesión muestra un aviso y no redirige", async () => {
     await mockSession(HttpResponse.json({ code: "INTERNAL_ERROR" }, { status: 500 }))
 
-    const router = renderAt("/tasks")
+    const router = renderAt("/account")
 
     expect(await screen.findByRole("alert")).toHaveTextContent("No pudimos comprobar tu sesión.")
-    expect(router.state.location.pathname).toBe("/tasks")
+    expect(router.state.location.pathname).toBe("/account")
   })
 })

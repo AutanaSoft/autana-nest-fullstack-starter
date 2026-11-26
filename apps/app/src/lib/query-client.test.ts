@@ -26,7 +26,7 @@ describe("createQueryClient", () => {
         sessionRequests++
         return HttpResponse.json(null)
       }),
-      http.get("*/v1/tasks", () => HttpResponse.json(sessionRequired, { status: 401 }))
+      http.get("*/v1/probe", () => HttpResponse.json(sessionRequired, { status: 401 }))
     )
     // El cliente solo consulta la sesión mientras hay un componente que la usa.
     const { unmount } = renderHook(() => authClient.useSession())
@@ -34,7 +34,7 @@ describe("createQueryClient", () => {
     const before = sessionRequests
 
     await createQueryClient()
-      .fetchQuery({ queryKey: ["tasks"], queryFn: () => apiClient.get("/tasks") })
+      .fetchQuery({ queryKey: ["probe"], queryFn: () => apiClient.get("/probe") })
       .catch(() => {})
 
     await waitFor(() => expect(sessionRequests).toBeGreaterThan(before))
@@ -48,14 +48,14 @@ describe("createQueryClient", () => {
         sessionRequests++
         return HttpResponse.json(null)
       }),
-      http.get("*/v1/tasks", () => HttpResponse.json({}, { status: 404 }))
+      http.get("*/v1/probe", () => HttpResponse.json({}, { status: 404 }))
     )
     const { unmount } = renderHook(() => authClient.useSession())
     await settle()
     const before = sessionRequests
 
     await createQueryClient()
-      .fetchQuery({ queryKey: ["tasks"], queryFn: () => apiClient.get("/tasks") })
+      .fetchQuery({ queryKey: ["probe"], queryFn: () => apiClient.get("/probe") })
       .catch(() => {})
     await settle()
 
@@ -66,14 +66,14 @@ describe("createQueryClient", () => {
   it("no reintenta un error 4xx", async () => {
     let calls = 0
     server.use(
-      http.get("*/v1/tasks", () => {
+      http.get("*/v1/probe", () => {
         calls++
         return HttpResponse.json({}, { status: 404 })
       })
     )
     const queryClient = createQueryClient()
 
-    await queryClient.fetchQuery({ queryKey: ["tasks"], queryFn: () => apiClient.get("/tasks") }).catch(() => {})
+    await queryClient.fetchQuery({ queryKey: ["probe"], queryFn: () => apiClient.get("/probe") }).catch(() => {})
 
     expect(calls).toBe(1)
   })

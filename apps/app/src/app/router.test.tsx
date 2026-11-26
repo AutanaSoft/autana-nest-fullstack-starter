@@ -30,10 +30,10 @@ describe("router", () => {
     expect(await screen.findByText("Crea tu cuenta")).toBeInTheDocument()
   })
 
-  it.each(["/tasks", "/profile"])("%s sin sesión redirige al inicio de sesión", async (path) => {
+  it("/account sin sesión redirige al inicio de sesión", async () => {
     await mockSession(null)
 
-    await renderAt(path)
+    await renderAt("/account")
 
     expect(await screen.findByText("Inicia sesión")).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/auth/sign-in")

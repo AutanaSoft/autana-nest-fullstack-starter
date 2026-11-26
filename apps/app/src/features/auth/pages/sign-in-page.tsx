@@ -4,7 +4,7 @@ import type { SignInValues } from "@autana/contracts/auth"
 
 export function SignInPage() {
   async function handleSubmit(values: SignInValues) {
-    // No navega: AuthLayout redirige a /tasks cuando la sesión ya existe, y así PanelLayout nunca ve una sesión sin refrescar.
+    // No navega: AuthLayout redirige a / cuando la sesión ya existe, y así PanelLayout nunca ve una sesión sin refrescar.
     await signIn(values)
   }
 

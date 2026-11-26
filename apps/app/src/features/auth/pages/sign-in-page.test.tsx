@@ -17,7 +17,7 @@ async function renderPage() {
   const router = createMemoryRouter(
     [
       { path: "/auth", Component: AuthLayout, children: [{ path: "sign-in", Component: SignInPage }] },
-      { path: "/tasks", element: <p>Panel</p> },
+      { path: "/", element: <p>Panel</p> },
     ],
     { initialEntries: ["/auth/sign-in"] }
   )
@@ -32,7 +32,7 @@ async function fillAndSubmit(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("SignInPage", () => {
-  it("al iniciar sesión, la sesión nueva lleva a /tasks", async () => {
+  it("al iniciar sesión, la sesión nueva lleva a /", async () => {
     let signedIn = false
     const { router, user } = await renderPage()
     server.use(
@@ -46,7 +46,7 @@ describe("SignInPage", () => {
     await fillAndSubmit(user)
 
     expect(await screen.findByText("Panel")).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe("/tasks")
+    expect(router.state.location.pathname).toBe("/")
   })
 
   it("con credenciales incorrectas muestra el error y no navega", async () => {

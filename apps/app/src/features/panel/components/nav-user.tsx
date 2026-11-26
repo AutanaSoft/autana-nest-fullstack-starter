@@ -70,9 +70,9 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem render={<Link to="/profile" />}>
+              <DropdownMenuItem render={<Link to="/account" />}>
                 <CircleUserRoundIcon />
-                Perfil
+                Cuenta
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
