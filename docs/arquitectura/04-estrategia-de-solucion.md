@@ -13,7 +13,7 @@
   HTTP.
 - **Servicios con una sola responsabilidad.** Cada servicio se ocupa de un concepto de dominio. Si su nombre necesita
   una "y" o mezcla conceptos no relacionados, se divide. Los criterios están en
-  [Responsabilidad de los servicios](./05-vista-de-bloques.md#responsabilidad-de-los-servicios).
+  [Responsabilidad de los servicios](./08-conceptos-transversales.md#responsabilidad-de-los-servicios).
 - **Tipos inferidos.** Los tipos salen de los esquemas Zod (`z.infer`) y no se declaran clases DTO.
 - **Respuestas filtradas.** Todo cuerpo correcto se valida y se filtra con el esquema del contrato antes de salir, de
   modo que ningún dato interno llega al cliente.

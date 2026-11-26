@@ -1,8 +1,8 @@
 # Dividir un servicio por responsabilidad
 
 Ejemplo genérico de cómo repartir la lógica de un módulo en servicios con una sola responsabilidad. Aplica la regla de
-[Responsabilidad de los servicios](../../arquitectura/05-vista-de-bloques.md#responsabilidad-de-los-servicios). El
-ejemplo usa `<resource>` y `<related>` para dos conceptos de dominio distintos.
+[Responsabilidad de los servicios](../../arquitectura/08-conceptos-transversales.md#responsabilidad-de-los-servicios).
+El ejemplo usa `<resource>` y `<related>` para dos conceptos de dominio distintos.
 
 ## Cuándo dividir
 
