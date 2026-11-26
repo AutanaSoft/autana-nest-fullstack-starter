@@ -17,12 +17,11 @@ Ejecútalos desde la raíz del repositorio.
   `npm run db:generate -w @autana/database -- --name db_init`. Después reinicia tu base con `npm run db:reset` y elimina
   la base de pruebas `<base>_test`, que `npm test` crea de nuevo.
 - `npm run db:migrate`: aplica las migraciones pendientes.
-- `npm run db:reset`: elimina todas las tablas y datos de la base de `DATABASE_URL`, y la migra de nuevo. Muestra la
-  base, el host y el entorno, y pide escribir el nombre de la base y responder `yes` para continuar.
+- `npm run db:reset`: deja la base de `DATABASE_URL` vacía y migrada. Pide confirmación.
 
 Para crear la base y definir `<base>`, consulta la [guía de configuración](./configuracion.md).
 
 ## Antes de enviar cambios
 
-Los hooks de Git formatean y comprueban los archivos preparados y validan el mensaje del commit (Conventional Commits).
-Ejecuta `npm run typecheck`, `npm run lint` y `npm test`.
+Ejecuta `npm run check` y `npm test`. Los hooks de Git formatean los archivos preparados y validan el mensaje del
+commit.

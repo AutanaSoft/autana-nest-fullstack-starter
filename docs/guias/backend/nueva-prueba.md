@@ -1,15 +1,11 @@
 # Escribir una prueba en el backend
 
-Ejemplos genéricos con `<name>` y `<resource>`, que ilustran los niveles descritos en
-[Pruebas](../../arquitectura/08-conceptos-transversales.md#pruebas). Antes de escribir una prueba, decide su nivel:
-
-- Si no necesita la aplicación completa ni una base de datos, es **unitaria** y va junto al archivo que prueba.
-- Si arranca la aplicación o usa PostgreSQL, es de **integración** y va en `apps/api/test/<módulo>/`.
+Ejemplos genéricos con `<name>` y `<resource>`, que aplican
+[Pruebas](../../arquitectura/08-conceptos-transversales.md#pruebas).
 
 ## Prueba unitaria
 
-Va junto al archivo que prueba, con el mismo nombre y la extensión `.spec.ts`. No necesita PostgreSQL ni variables de
-entorno. Vitest expone `describe`, `it`, `expect` y `vi` sin importarlos.
+Vitest expone `describe`, `it`, `expect` y `vi` sin importarlos.
 
 ```ts
 // src/common/errors/error-response.spec.ts
@@ -48,9 +44,8 @@ describe("<name>", () => {
 })
 ```
 
-La configuración se prueba con objetos, sin tocar `process.env`, de modo que la prueba no depende del `.env` de quien la
-ejecute. El ejemplo completo está en [Definir una configuración](./nueva-configuracion.md#probar-la-configuración). La
-validación global se prueba igual:
+La configuración se prueba con objetos, sin tocar `process.env`; el ejemplo completo está en
+[Definir una configuración](./nueva-configuracion.md#probar-la-configuración). La validación global se prueba igual:
 
 ```ts
 // src/config/env.validation.spec.ts
@@ -65,9 +60,8 @@ describe("validateEnv", () => {
 })
 ```
 
-Una regla de un servicio que no consulta la base de datos se prueba con `Test.createTestingModule`. Las dependencias se
-sustituyen con `useValue`. Las reglas que consultan la base se prueban en integración, como explica
-[Reglas de un servicio](../../arquitectura/08-conceptos-transversales.md#particularidades-del-backend).
+Una regla de un servicio que no consulta la base de datos se prueba con `Test.createTestingModule`, sustituyendo las
+dependencias con `useValue`:
 
 ```ts
 // src/modules/<name>/services/<name>.service.spec.ts
@@ -97,9 +91,7 @@ describe("<Name>Service", () => {
 
 ## Prueba de integración
 
-Va en `test/<módulo>/<name>.e2e-spec.ts`. `createTestApp` arranca la misma aplicación que `main.ts` y `createClient` la
-llama con Supertest sin abrir un puerto fijo, enviando `Origin` como un navegador y construyendo las URL con
-`apiBasePath`.
+`createTestApp` arranca la aplicación y `createClient` la llama con Supertest, con las URL relativas a `apiBasePath`.
 
 ```ts
 // test/<name>/<name>.e2e-spec.ts
@@ -137,9 +129,8 @@ describe("GET /<resource>", () => {
 })
 ```
 
-Las rutas que exigen sesión se prueban con el flujo real. `signUp` registra un usuario y devuelve su cookie, y
-`deleteUsers` lo elimina al terminar, con sus datos. Cada archivo usa su propio prefijo de correo, que no debe empezar
-por el de otro archivo, porque los archivos se ejecutan en paralelo contra la misma base:
+Para una ruta que exige sesión, `signUp` registra un usuario con el prefijo de correo del archivo y devuelve su cookie,
+y `deleteUsers` elimina los usuarios del prefijo al terminar:
 
 ```ts
 const emailPrefix = "e2e-<name>-"
@@ -155,8 +146,8 @@ it("lista los recursos del usuario", async () => {
 })
 ```
 
-Para comprobar el comportamiento que cambia con `NODE_ENV` o con otra variable de entorno, arranca la aplicación con ese
-entorno. `createTestApp({ env })` vuelve a importarla, y la prueba restaura el entorno al terminar:
+Para el comportamiento que cambia con `NODE_ENV` u otra variable, `createTestApp({ env })` arranca la aplicación con ese
+entorno, y la prueba lo restaura al terminar:
 
 ```ts
 // test/common/production.e2e-spec.ts
@@ -174,8 +165,7 @@ it("añade una CSP que no permite cargar nada", async () => {
 })
 ```
 
-Para provocar un error que la API no produce, pasa un controlador de prueba a `createTestApp({ controllers })`; se
-registra solo en esa aplicación.
+Para provocar un error que la API no produce, pasa un controlador de prueba a `createTestApp({ controllers })`.
 
 ## Ejecutarlas
 

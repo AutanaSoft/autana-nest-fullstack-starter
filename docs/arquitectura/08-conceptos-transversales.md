@@ -22,13 +22,14 @@ SWC no comprueba tipos: `npm run typecheck` ejecuta `tsc --noEmit` aparte.
 Cada servicio se ocupa de un concepto de dominio y cambia por una sola razón. Un módulo puede tener varios, como
 `services/<name>.service.ts` y `services/<name>-stats.service.ts`.
 
+- Un servicio se divide cuando su nombre contiene "y" (`<Resource>And<Related>Service`), cuando inyecta dependencias que
+  solo usa una parte de sus métodos o cuando sus pruebas necesitan muchos dobles.
 - Un caso de uso que coordina varios servicios lo ordena el controlador, que no contiene reglas de negocio.
 - La lógica sencilla se queda en su servicio, sin fragmentarla en servicios o funciones auxiliares.
 - Las consultas viven en el servicio. Se extraen a un repositorio del módulo solo cuando son complejas o las reutilizan
   varios servicios.
 
-Los criterios para dividir un servicio y el ejemplo están en la guía
-[Dividir un servicio por responsabilidad](../guias/backend/nuevo-servicio.md).
+El ejemplo está en la guía [Dividir un servicio por responsabilidad](../guias/backend/nuevo-servicio.md).
 
 ### Inyección de dependencias
 
@@ -210,6 +211,11 @@ que el guard de sesión, por lo que `noStore` también alcanza al `401`.
   [Definir una configuración](../guias/backend/nueva-configuracion.md) muestra el patrón.
 - `validateEnv` (`src/config/env.validation.ts`) valida todo el entorno al arrancar y detiene el proceso nombrando cada
   variable inválida. Los servicios inyectan `<name>Config.KEY` y no leen `process.env`.
+- Una variable que leen varios dominios se declara en cada uno con la misma definición, porque `validateEnv` se queda
+  con la última. `env.validation.spec.ts` comprueba que todas se comportan igual con un conjunto fijo de valores.
+- Cada variable nueva se documenta en el `.env.example` de su workspace y en
+  [Configuración](../guias/general/configuracion.md). Una prueba comprueba que las variables de la API coinciden con su
+  `.env.example`, salvo `NODE_ENV`.
 - Cada workspace tiene su `.env` sin versionar (`apps/api`, `apps/app` y `packages/database`) y un `.env.example`
   versionado, sin secretos, que sirve de plantilla. El `.env` se carga solo si existe, y una variable definida en el
   entorno prevalece sobre él.
@@ -416,8 +422,9 @@ integración, solo en el backend. Las de extremo a extremo todavía no existen. 
 - Bajo Vitest, Better Auth desactiva su comprobación de origen, así que `403 INVALID_ORIGIN` no se prueba allí
   ([Riesgos](./11-riesgos-y-deuda-tecnica.md#riesgos)). La protección CSRF de la API sí se prueba.
 - **Aislamiento entre archivos.** Los archivos de integración se ejecutan en paralelo contra la misma base. Cada uno usa
-  un prefijo de correo propio y elimina sus usuarios al terminar, lo que borra sus datos. Una prueba con datos sin
-  propietario, o que cuenta las filas de toda una tabla, necesita su propia base o esquema.
+  un prefijo de correo propio, que no empieza por el de otro archivo, y elimina sus usuarios al terminar, lo que borra
+  sus datos. Una prueba con datos sin propietario, o que cuenta las filas de toda una tabla, necesita su propia base o
+  esquema.
 - **Reglas de un servicio.** Las que consultan la base se prueban en integración: simular el cliente de Drizzle ataría
   la prueba a la forma de cada consulta. La lógica pura se prueba de forma unitaria, sustituyendo otros providers con
   `useValue`.

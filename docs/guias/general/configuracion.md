@@ -3,8 +3,7 @@
 ## Requisitos
 
 - Node.js 26 y npm 11.
-- PostgreSQL 18 o superior, accesible desde la máquina de desarrollo, y su cliente para crear la base (`createdb`). En
-  Fedora: `sudo dnf install postgresql`.
+- PostgreSQL 18 o superior, accesible desde la máquina de desarrollo, y su cliente para crear la base (`createdb`).
 
 ## Puesta en marcha
 
@@ -27,8 +26,7 @@
    - `TRUST_PROXY`: `true` solo detrás de un proxy inverso que añada la IP del cliente a `X-Forwarded-For` (opcional,
      `false` por defecto).
    - `CLIENT_IP_HEADER`: cabecera de la que se toma la IP del cliente para el límite de peticiones de Nest y el de
-     intentos de acceso de Better Auth, por ejemplo `CF-Connecting-IP` detrás de Cloudflare (opcional). Úsala solo si el
-     proxy la sobrescribe siempre y el servidor no acepta tráfico que no pase por él.
+     intentos de acceso de Better Auth, por ejemplo `CF-Connecting-IP` detrás de Cloudflare (opcional).
 
    Variable de [`packages/database/.env`](../../../packages/database/.env.example), que usan los comandos `db:*`:
 
@@ -62,12 +60,7 @@
    El frontend queda en <http://localhost:5173> y reenvía `/v1` a la API. En desarrollo, la documentación de la API está
    en `/v1/docs`.
 
-## Bases de datos
+## Base de pruebas
 
-Solo se configura `DATABASE_URL`, que apunta a la base de desarrollo. Las pruebas derivan su base añadiéndole un sufijo,
-de modo que cambiar el nombre en `DATABASE_URL` cambia las dos. Con `autana_dev` como `<base>`:
-
-- `<base>`: desarrollo. La creas tú, como en la puesta en marcha.
-- `<base>_test`: pruebas de integración de la API con Vitest. La crean y migran `npm test` y `npm run test:e2e -w api`.
-
-Las pruebas no aceptan que `DATABASE_URL` apunte a una base que ya termine en `_test`.
+`npm test` y `npm run test:e2e -w api` crean y migran `<base>_test` en el mismo servidor; no hace falta crearla. Los
+nombres de las bases se explican en [Datos](../../arquitectura/08-conceptos-transversales.md#datos).

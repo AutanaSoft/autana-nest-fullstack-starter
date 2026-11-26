@@ -5,7 +5,7 @@ Gracias por tu interés en mejorar este proyecto.
 ## Primeros pasos
 
 Los requisitos, la configuración de variables de entorno y los comandos están en
-[`docs/guias/general/`](./docs/guias/general/README.md). La arquitectura está en
+[`docs/guias/general/`](./docs/guias/general/). La arquitectura está en
 [`docs/arquitectura/`](./docs/arquitectura/README.md).
 
 ## Flujo de trabajo
