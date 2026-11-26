@@ -48,6 +48,12 @@ describe("health", () => {
       })
     })
 
+    it("devuelve del indicador de base de datos solo su estado y su tiempo de respuesta", async () => {
+      const response = await client.request("/health/ready")
+
+      expect(Object.keys(response.body.details.database).toSorted()).toEqual(["responseTime", "status"])
+    })
+
     it("responde 503 con el detalle cuando la base de datos falla", async () => {
       failDatabase()
 

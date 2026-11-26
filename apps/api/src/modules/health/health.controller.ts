@@ -1,5 +1,5 @@
 import { Controller, Get, Res, ServiceUnavailableException } from "@nestjs/common"
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger"
+import { ApiOperation, ApiResponse, ApiTags, ApiUnauthorizedResponse } from "@nestjs/swagger"
 import {
   DiskHealthIndicator,
   HealthCheck,
@@ -9,6 +9,7 @@ import {
   MemoryHealthIndicator,
 } from "@nestjs/terminus"
 import { AllowAnonymous } from "@thallesp/nestjs-better-auth"
+import { errorResponseSchema } from "@autana/contracts/errors"
 import { healthResponseSchema } from "@autana/contracts/health"
 import type { Response } from "express"
 
@@ -60,6 +61,7 @@ export class HealthController {
   @ApiOperation({ summary: "Detalle de la salud de la API: base de datos, memoria y disco" })
   @ResponseSchema(healthResponseSchema)
   @ApiResponse({ status: 503, standardSchema: healthResponseSchema })
+  @ApiUnauthorizedResponse({ description: "Sin sesión válida", standardSchema: errorResponseSchema })
   check(@Res({ passthrough: true }) response: Response) {
     return this.run(response, [
       () => this.database.pingCheck("database").withTimeout(databaseTimeout),

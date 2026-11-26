@@ -60,7 +60,11 @@ describe("documentación de la API", () => {
 
     // Solo se publican los esquemas que alguna operación referencia.
     it("publica los esquemas del contrato", () => {
-      expect(Object.keys(document.components.schemas).toSorted()).toEqual(["HealthIndicator", "HealthResponse"])
+      expect(Object.keys(document.components.schemas).toSorted()).toEqual([
+        "ErrorResponse",
+        "HealthIndicator",
+        "HealthResponse",
+      ])
     })
 
     it("describe las rutas de salud con la respuesta 200 y la 503 del contrato", () => {
@@ -77,6 +81,26 @@ describe("documentación de la API", () => {
         }
         expect(get.responses["503"].content["application/json"].schema).toEqual(healthResponse)
       }
+    })
+
+    it("documenta el 401 de la ruta de salud que exige sesión, y solo de esa", () => {
+      const responses = (path: string) =>
+        (
+          document.paths[`${apiBasePath}${path}`].get as {
+            responses: Record<string, { content?: Record<string, { schema: unknown }> }>
+          }
+        ).responses
+      expect(responses("/health")["401"].content?.["application/json"].schema).toEqual({
+        $ref: "#/components/schemas/ErrorResponse",
+      })
+      expect(responses("/health/live")["401"]).toBeUndefined()
+      expect(responses("/health/ready")["401"]).toBeUndefined()
+    })
+
+    it("documenta el tiempo de respuesta de cada indicador", () => {
+      expect(document.components.schemas.HealthIndicator).toMatchObject({
+        properties: { responseTime: { type: "number" } },
+      })
     })
   })
 

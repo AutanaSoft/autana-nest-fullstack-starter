@@ -11,7 +11,6 @@ type IndicatorCardProps = {
 
 export function IndicatorCard({ name, indicator }: IndicatorCardProps) {
   const label = indicatorLabels[name] ?? name
-  const responseTime = typeof indicator.responseTime === "number" ? indicator.responseTime : null
 
   return (
     <Card className="@container/card" role="group" aria-label={label}>
@@ -24,7 +23,7 @@ export function IndicatorCard({ name, indicator }: IndicatorCardProps) {
       </CardHeader>
       <CardFooter className="flex-col items-start gap-1 text-sm text-muted-foreground">
         {indicator.message && <p className="text-destructive">{indicator.message}</p>}
-        {responseTime !== null && <p>Respuesta en {responseTime} ms</p>}
+        {indicator.responseTime !== undefined && <p>Respuesta en {indicator.responseTime} ms</p>}
       </CardFooter>
     </Card>
   )

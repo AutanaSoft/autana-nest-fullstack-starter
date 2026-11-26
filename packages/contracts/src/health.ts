@@ -1,10 +1,11 @@
 import { z } from "zod"
 
-// Resultado de un indicador de Terminus. `message` solo aparece cuando falla; el resto de campos dependen del
-// indicador, por lo que se conservan sin validarlos.
+// Resultado de un indicador de Terminus. `message` solo aparece cuando falla, y `responseTime` (en milisegundos), en los
+// indicadores que comprueban con `attempt()`. Un indicador puede añadir otros campos, que se conservan sin validarlos.
 export const healthIndicatorSchema = z.looseObject({
   status: z.enum(["up", "degraded", "down"]).meta({ example: "up" }),
   message: z.string().optional(),
+  responseTime: z.number().optional().meta({ example: 3 }),
 })
 
 const healthIndicatorsSchema = z.record(z.string(), healthIndicatorSchema)

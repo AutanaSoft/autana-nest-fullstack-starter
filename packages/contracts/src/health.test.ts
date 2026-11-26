@@ -28,6 +28,7 @@ describe("healthResponseSchema", () => {
     { status: "ok" },
     { status: "unknown", details: {} },
     { status: "ok", details: { database: { status: "unknown" } } },
+    { status: "ok", details: { database: { status: "up", responseTime: "3" } } },
   ])("rechaza %j", (response) => {
     expect(healthResponseSchema.safeParse(response).success).toBe(false)
   })

@@ -123,10 +123,10 @@ que dupliquen uno de shadcn.
 
 ### Fase 5. Verificación final
 
-- [ ] 5.1 Ejecutar `npm run check` y `npm test`, incluidas las e2e y el umbral de cobertura.
-- [ ] 5.2 Buscar referencias restantes con
+- [x] 5.1 Ejecutar `npm run check` y `npm test`, incluidas las e2e y el umbral de cobertura.
+- [x] 5.2 Buscar referencias restantes con
       `grep -rniE "tasks?\b|profile" apps packages docs --include=*.ts --include=*.tsx --include=*.md --exclude-dir=node_modules`.
-- [ ] 5.3 Arrancar la aplicación y recorrer registro, inicio de sesión, página de estado, página de cuenta, edición del
+- [x] 5.3 Arrancar la aplicación y recorrer registro, inicio de sesión, página de estado, página de cuenta, edición del
       nombre y cierre de sesión.
 
 **Criterios de aceptación**
